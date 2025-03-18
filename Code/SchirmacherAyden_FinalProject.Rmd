@@ -5,7 +5,8 @@ output:
     df_print: paged
 date: "`r Sys.Date()`"
 ---
-```{r, include=FALSE, warning=FALSE, message=FALSE}
+##Data Wrangling
+```{r clear environment, include=FALSE, warning=FALSE, message=FALSE}
 remove(list=ls())
 ```
 
@@ -85,15 +86,55 @@ fish_all<-fish_all%>%
 #^^create date object
 ```
 
+```{r group by species type, message=FALSE, warning=FALSE}
+fish_all <- fish_all %>%
+  mutate(species_group = case_when(
+    FISH %in% c("Blue Crabs, Hard", "Shrimp (Heads On)") 
+      ~ "Crustaceans",
+    FISH %in% c("Clams, Hard (Meats)", "Oysters (Meats)") 
+      ~ "Bivalves (Shellfish)",
+    FISH %in% c("Flounder, Southern", "Flounder, Summer") 
+      ~ "Flatfish (Flounders)",
+    FISH %in% c("Mackerel, King", "Mackerel, Spanish") 
+      ~ "Mackerels",
+    FISH %in% c("Perch, White", "Perch, Yellow") 
+      ~ "Perches",
+    FISH %in% c("Mullet, Sea (Kingfishes)", "Mullet, Striped") 
+      ~ "Mullets",
+    FISH %in% c("Croaker, Atlantic", "Drum, Black", "Drum, Red", 
+                "Seatrout, Spotted", "Weakfish (Grey Trout)") 
+      ~ "Drums & Croakers",
+    FISH %in% c("Shad, American", "Shad, Hickory") 
+      ~ "Shads",
+    FISH %in% c("Bluefish", "Butterfish", "Carp", "Catfishes", "Cobia", 
+                "Eel, American", "Grunts", "Harvestfish (Starbutters)", 
+                "Pigfish", "Pompano", "Porgies", "Pufferfish", "Sea Basses",
+                "Sheepshead", "Snappers, Other", "Spadefish", "Spot", "Squid",
+                "Striped Bass") 
+      ~ "Other Common Finfish",
+    FISH %in% c("Unclassified Fish For Industrial/Bait", 
+                "Unclassified Fish for Food", "Unclassified Shellfish") 
+      ~ "Unclassified Categories",
+    TRUE ~ "Other"))
+```
+
+##Exploratory Plots
 ```{r plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
 fish_plot<-
-  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=Year))+
-  scale_x_log10()+ #if we wanted to meet normal assumptions, we would
-  #need to also scale the y axis
+  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   geom_point(alpha = 0.40)+
   labs(
-    title="Ratio of Fish Weight to Value from\nCommercial Fishing in North Carolina, 1972-2022",
+    title="Ratio of Fish Weight to Value from Commercial Fishing
+    by Species Type in North Carolina, 1972-2022",
     x="Weight (Units)", y="Value ($USD)")+
+  geom_text_repel(data = fish_all%>%
+                  filter(abs(FINALVALUE) > 20000000),
+                  aes(label = paste(FISH, format(Year, "%Y"))),
+                  color = 'red', size=3)+
+  geom_text_repel(data = fish_all%>%
+                    filter(abs(FINALWEIGHT) > 100000000),
+                  aes(label=paste(FISH, format(Year, "%Y"))),
+                  color='red', size=3)+
   theme_bw()
 
 fish_plot
@@ -101,15 +142,16 @@ fish_plot
 
 ```{r log plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
 fish_log_plot<-
-  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=Year))+
+  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   scale_x_log10()+
+  #^^to meet normality assumptions, we could log scale the y axis as well
   geom_point(alpha = 0.40)+
-  geom_smooth(method = "lm", linewidth=0.75)+
   geom_text_repel(data = fish_all%>%
-                  filter(abs(FINALVALUE) > 17000000),
+                  filter(abs(FINALVALUE) > 20000000),
                   aes(label = paste(FISH, format(Year, "%Y"))),
                   color = 'red', size=3)+
-  ggtitle("Logged Ratio of Fish Weight to Value from\nCommercial Fishing in North Carolina, 1972-2022")+
+  ggtitle("Logged Ratio of Fish Weight to Value from Commercial Fishing
+          by Species Type in North Carolina, 1972-2022")+
   xlab("Log Scale Weight (Units)")+
   ylab("Value ($USD)")+
   theme_bw()
@@ -117,7 +159,18 @@ fish_log_plot<-
 fish_log_plot
 ```
 
+```{r log plot ratio by species group, warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col = species_group))+
+  geom_point(alpha = 0.35)+
+  scale_x_log10()+
+  labs(x="Log Weight (units)", y="Value ($USD)", 
+  title = "Logged Ratio of Fish Weight to Value from Commercial Fishing
+          by Species Type in North Carolina, 1972-2022")+
+  facet_wrap(~ species_group)
+```
+
 ```{r animation over time, warning=FALSE, message=FALSE, echo=FALSE}
+#this animation plot can't be knitted to a PDF file
 fish_animate<-
   ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, 
                        size=3,
@@ -127,13 +180,36 @@ fish_animate<-
     labs(title = 'Ratio of Value to Log Weight, Year: {closest_state}', 
        x = 'Log Scale Weight (Units)', 
        y = 'Value ($USD)') +
-    transition_states(Year, transition_length = 1, state_length = 1, wrap = TRUE)+
+    transition_states(Year, transition_length = 1, state_length = 1,
+                      wrap = TRUE)+
     ease_aes('cubic-in-out')+
   geom_text(data = fish_all%>%
-            filter(FINALVALUE > 6000000),
-            aes(label=FISH), 
-            hjust = 1, vjust = 0, size = 3, color = "black")
+    filter(FINALVALUE > 6000000),
+    aes(label=FISH), 
+    hjust = 1, vjust = 0, size = 3, color = "black")
 
 animate(fish_animate, fps = 30, duration = 15)
 ```
+
+##Statistical Analysis
+```{r ANOVA, message=FALSE, warning=FALSE, echo=FALSE}
+fish_anova<-aov(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
+
+summary(fish_anova)
+```
+
+```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
+fish_lm<-lm(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
+
+summary(fish_lm)
+```
+
+```{r multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
+fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + species_group)
+
+summary(fish_multi_lm)
+```
+
+
+
 
