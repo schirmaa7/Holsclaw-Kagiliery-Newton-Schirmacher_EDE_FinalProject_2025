@@ -1,0 +1,139 @@
+---
+title: "SchirmacherAyden_FinalProject"
+output:
+  html_document:
+    df_print: paged
+date: "`r Sys.Date()`"
+---
+```{r, include=FALSE, warning=FALSE, message=FALSE}
+remove(list=ls())
+```
+
+```{r packages, warning=FALSE, message=FALSE, include=FALSE}
+#install.packages("dplyr")
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+#install.packages("lubridate")
+#install.packages("ggrepel")
+#install.packages("here")
+#install.packages("gifski")
+#install.packages("gganimate")
+#install.packages("gapminder")
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(ggrepel)
+library(here)
+library(gifski)
+library(gganimate)
+library(gapminder)
+```
+
+```{r data import, message=FALSE, warning=FALSE, include=FALSE}
+getwd()
+
+fish_2022<-read.csv(here("Data", "Raw", "2022.csv"))
+fish_2017<-read.csv(here("Data", "Raw", "2017.csv"))
+fish_2012<-read.csv(here("Data", "Raw", "2012.csv"))
+fish_2007<-read.csv(here("Data", "Raw", "2007.csv"))
+fish_2002<-read.csv(here("Data", "Raw", "2002.csv"))
+fish_1997<-read.csv(here("Data", "Raw", "1997.csv"))
+fish_1992<-read.csv(here("Data", "Raw", "1992.csv"))
+fish_1987<-read.csv(here("Data", "Raw", "1987.csv"))
+fish_1982<-read.csv(here("Data", "Raw", "1982.csv"))
+fish_1977<-read.csv(here("Data", "Raw", "1977.csv"))
+fish_1972<-read.csv(here("Data", "Raw", "1972.csv"))
+
+fish_all <- bind_rows(
+  "1972" = fish_1972, 
+  "1977" = fish_1977, 
+  "1982" = fish_1982, 
+  "1987" = fish_1987, 
+  "1992" = fish_1992, 
+  "1997" = fish_1997, 
+  "2002" = fish_2002, 
+  "2007" = fish_2007, 
+  "2012" = fish_2012, 
+  "2017" = fish_2017, 
+  "2022" = fish_2022, 
+  .id = "Year")
+```
+
+```{r cleaning the data, message=FALSE, warning=FALSE, include=FALSE}
+
+fish_all$FINALWEIGHT <- gsub("[,]", "", fish_all$FINALWEIGHT) 
+#^^remove commas from data
+fish_all$FINALVALUE <- gsub("[,]", "", fish_all$FINALVALUE)
+#^^remove commas from data
+fish_all$FINALVALUE <- gsub("\\$", "", fish_all$FINALVALUE)
+#^^remove dollar signs from data
+
+#Keeping only the fish observations that are present across all years
+fish_all<-fish_all %>%
+  group_by(FISH) %>%
+  filter(n_distinct(Year) == length(unique(fish_all$Year))) %>%
+  #^^keep only the observations across all years
+  ungroup()
+
+fish_all<-fish_all%>%
+  filter(!is.na(FINALWEIGHT))%>% #filter for NA
+  filter(!is.na(FINALVALUE))%>% #filter for NA
+  mutate(FINALWEIGHT=as.integer(FINALWEIGHT))%>% #make data into numerical
+  mutate(FINALVALUE=as.integer(FINALVALUE))%>% #make data into numerical
+ mutate(Year = as.Date(paste0(Year, "-01-01"), format="%Y-%m-%d")) 
+#^^create date object
+```
+
+```{r plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
+fish_plot<-
+  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=Year))+
+  scale_x_log10()+ #if we wanted to meet normal assumptions, we would
+  #need to also scale the y axis
+  geom_point(alpha = 0.40)+
+  labs(
+    title="Ratio of Fish Weight to Value from\nCommercial Fishing in North Carolina, 1972-2022",
+    x="Weight (Units)", y="Value ($USD)")+
+  theme_bw()
+
+fish_plot
+```
+
+```{r log plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
+fish_log_plot<-
+  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=Year))+
+  scale_x_log10()+
+  geom_point(alpha = 0.40)+
+  geom_smooth(method = "lm", linewidth=0.75)+
+  geom_text_repel(data = fish_all%>%
+                  filter(abs(FINALVALUE) > 17000000),
+                  aes(label = paste(FISH, format(Year, "%Y"))),
+                  color = 'red', size=3)+
+  ggtitle("Logged Ratio of Fish Weight to Value from\nCommercial Fishing in North Carolina, 1972-2022")+
+  xlab("Log Scale Weight (Units)")+
+  ylab("Value ($USD)")+
+  theme_bw()
+
+fish_log_plot
+```
+
+```{r animation over time, warning=FALSE, message=FALSE, echo=FALSE}
+fish_animate<-
+  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, 
+                       size=3,
+                       col = FISH)) +
+    geom_point(alpha = 0.7, show.legend = FALSE) +
+    scale_x_log10()+
+    labs(title = 'Ratio of Value to Log Weight, Year: {closest_state}', 
+       x = 'Log Scale Weight (Units)', 
+       y = 'Value ($USD)') +
+    transition_states(Year, transition_length = 1, state_length = 1, wrap = TRUE)+
+    ease_aes('cubic-in-out')+
+  geom_text(data = fish_all%>%
+            filter(FINALVALUE > 6000000),
+            aes(label=FISH), 
+            hjust = 1, vjust = 0, size = 3, color = "black")
+
+animate(fish_animate, fps = 30, duration = 15)
+```
+
