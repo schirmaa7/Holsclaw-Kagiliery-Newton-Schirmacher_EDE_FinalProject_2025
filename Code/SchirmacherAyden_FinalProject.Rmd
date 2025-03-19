@@ -86,7 +86,7 @@ fish_all<-fish_all%>%
 #^^create date object
 ```
 
-```{r group by species type, message=FALSE, warning=FALSE}
+```{r group by species type, message=FALSE, warning=FALSE, include=FALSE}
 fish_all <- fish_all %>%
   mutate(species_group = case_when(
     FISH %in% c("Blue Crabs, Hard", "Shrimp (Heads On)") 
@@ -117,6 +117,26 @@ fish_all <- fish_all %>%
       ~ "Unclassified Categories",
     TRUE ~ "Other"))
 ```
+
+```{r new value to weight ratio, message=FALSE, warning=FALSE, include=FALSE}
+fish_all<-fish_all%>%
+  mutate(value_weight_ratio=FINALVALUE/FINALWEIGHT)
+```
+
+```{r create difference in means between 1972 and 2022, message=FALSE, warning=FALSE, include=FALSE}
+fish_year01<-fish_all%>%
+  filter(Year=="1972-01-01")
+fish_year50<-fish_all%>%
+  filter(Year=="2022-01-01")
+
+fish_diff<- 
+  left_join(fish_year50, fish_year01, by = "FISH", suffix = c("_2022", "_1972")) %>%
+  mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_1972)
+
+fish_all <- left_join(fish_all, fish_diff %>% select(FISH, diff_means), by = "FISH")
+
+```
+
 
 ##Exploratory Plots
 ```{r plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
@@ -192,18 +212,42 @@ animate(fish_animate, fps = 30, duration = 15)
 ```
 
 ##Statistical Analysis
+
+**Two sample t-test for value-to-weight ratio 1972 vs. 2022**
+```{r two sample t test between year 01 and year 50, message=FALSE, warning=FALSE, echo=FALSE}
+
+t_test_results <- fish_all %>%
+  group_by(species_group) %>%
+  summarise(p_value = t.test(
+    value_weight_ratio[Year == "1972-01-01"], 
+    value_weight_ratio[Year == "2022-01-01"], 
+    alternative = "two.sided", 
+    var.equal = FALSE
+  )$p.value)
+
+print(t_test_results)
+
+#two sample t-test with the output showing the p-values... species groups with 
+#significant p-values have a significant change between 1972 and 2022 in the
+#value to weight ratio. 
+
+```
+
+**ANOVA test across all years**
 ```{r ANOVA, message=FALSE, warning=FALSE, echo=FALSE}
 fish_anova<-aov(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
 
 summary(fish_anova)
 ```
 
+**Linear Model across all years**
 ```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_lm<-lm(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
 
 summary(fish_lm)
 ```
 
+**MLR across all years**
 ```{r multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + species_group)
 
