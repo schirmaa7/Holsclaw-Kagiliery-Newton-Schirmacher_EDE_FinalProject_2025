@@ -139,7 +139,43 @@ fish_all <- left_join(fish_all, fish_diff %>% select(FISH, diff_means), by = "FI
 
 
 ##Exploratory Plots
-```{r plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
+```{r value by year plot, message=FALSE, warning=TRUE, echo=FALSE}
+year_value_plot<-
+  ggplot(fish_all, aes(x = Year, y = FINALVALUE, col=species_group))+
+  geom_point(alpha = 0.40)+
+  labs(
+    title="Final Value from Commercial Fishing by Species Type
+    in North Carolina, 1972-2022",
+    x="Year", y="Value ($USD)")+
+  theme_bw()
+
+year_value_plot
+```
+
+```{r weight by year plot, message=FALSE, warning=FALSE, echo=FALSE}
+year_weight_plot<-
+  ggplot(fish_all, aes(x = Year, y = FINALWEIGHT, col=species_group))+
+  geom_point(alpha = 0.40)+
+  labs(
+    title="Final Weight from Commercial Fishing by Species Type
+    in North Carolina, 1972-2022",
+    x="Year", y="Weight (units)")+
+  theme_bw()
+
+year_weight_plot
+```
+
+```{r log plot value by species group, warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(fish_all, aes(x = Year, y = FINALVALUE, col = species_group))+
+  geom_point()+
+  geom_smooth(method = lm, color="red", linewidth=0.45)+
+  labs(x="Year", y="Value ($USD)", 
+  title = "Final Value from Commercial Fishing
+          by Species Type in North Carolina, 1972-2022")+
+  facet_wrap(~ species_group)
+```
+
+```{r ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
 fish_plot<-
   ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   geom_point(alpha = 0.40)+
@@ -160,7 +196,7 @@ fish_plot<-
 fish_plot
 ```
 
-```{r log plot ratio, warning=FALSE, message=FALSE, echo=FALSE}
+```{r log ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
 fish_log_plot<-
   ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   scale_x_log10()+
@@ -177,16 +213,6 @@ fish_log_plot<-
   theme_bw()
 
 fish_log_plot
-```
-
-```{r log plot ratio by species group, warning=FALSE, message=FALSE, echo=FALSE}
-ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col = species_group))+
-  geom_point(alpha = 0.35)+
-  scale_x_log10()+
-  labs(x="Log Weight (units)", y="Value ($USD)", 
-  title = "Logged Ratio of Fish Weight to Value from Commercial Fishing
-          by Species Type in North Carolina, 1972-2022")+
-  facet_wrap(~ species_group)
 ```
 
 ```{r animation over time, warning=FALSE, message=FALSE, echo=FALSE}
@@ -240,14 +266,14 @@ fish_anova<-aov(data=fish_all, FINALVALUE ~ FINALWEIGHT)
 summary(fish_anova)
 ```
 
-**Linear Model across all years**
+**Linear Model ratio across all years**
 ```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_lm<-lm(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
 
 summary(fish_lm)
 ```
 
-**MLR across all years**
+**MLR ratio across all years**
 ```{r multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + species_group)
 
