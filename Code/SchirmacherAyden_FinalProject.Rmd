@@ -91,12 +91,8 @@ library(dplyr)
 fish_all <- fish_all %>%
   mutate(species_group = case_when(
     FISH %in% c("Blue Crabs, Hard", "Blue Crabs, Peeler", 
-                "Blue Crabs, Soft", 
-                "Stone Crabs") 
-    ~ "Crab",
-    
-    FISH %in% c("Shrimp (Heads On)")
-    ~ "Shrimp",
+                "Blue Crabs, Soft", "Stone Crabs", ("Shrimp (Heads On)")) 
+    ~ "Crustaceans",
     
     FISH %in% c("Clams, Hard (Meats)", "Clams, Hard (Numbers)", 
                 "Oysters (Bushels)", "Oysters (Meats)", 
@@ -192,7 +188,7 @@ year_weight_plot<-
   labs(
     title="Final Weight from Commercial Fishing by Species Type
     in North Carolina, 2014-2022",
-    x="Year", y="Weight (units)")+
+    x="Year", y="Weight (lbs)")+
   theme_bw()
 
 year_weight_plot
@@ -216,13 +212,13 @@ fish_plot<-
   labs(
     title="Ratio of Fish Weight to Value from Commercial Fishing
     by Species Type in North Carolina, 2014-2022",
-    x="Weight (Units)", y="Value ($USD)")+
-  scale_y_continuous(labels=comma)+
-  scale_x_continuous(labels=comma)+
+    x="Weight (lbs)", y="Value ($USD)")+
   geom_text_repel(data = fish_all%>%
                   filter(abs(FINALVALUE) > 23000000),
                   aes(label = paste(FISH, format(Year, "%Y"))),
                   color = 'red', size=3)+
+    scale_y_continuous(labels=comma)+
+  scale_x_continuous(labels=comma)+
   theme_bw()
 
 fish_plot
@@ -231,16 +227,12 @@ fish_plot
 ```{r log ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
 fish_log_plot<-
   ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
-  scale_x_log10()+
-  scale_y_log10()+
+  scale_x_log10(labels=comma)+
+  scale_y_log10(labels=comma)+
   geom_point(alpha = 0.40)+
-  geom_text_repel(data = fish_all%>%
-                  filter(abs(FINALVALUE) > 23000000),
-                  aes(label = paste(FISH, format(Year, "%Y"))),
-                  color = 'red', size=3)+
   ggtitle("Logged Ratio of Fish Weight to Value from Commercial Fishing
           by Species Type in North Carolina, 2014-2022")+
-  xlab("Log Scale Weight (Units)")+
+  xlab("Log Scale Weight (lbs)")+
   ylab("Value ($USD)")+
   theme_bw()
 
@@ -254,7 +246,8 @@ fish_animate<-
                        size=3,
                        col = FISH)) +
     geom_point(alpha = 0.7, show.legend = FALSE) +
-    scale_x_log10()+
+    scale_x_log10(labels=comma)+
+    scale_y_continuous(labels=comma)+
     labs(title = 'Ratio of Value to Log Weight, Year: {closest_state}', 
        x = 'Log Scale Weight (Units)', 
        y = 'Value ($USD)') +
@@ -262,7 +255,7 @@ fish_animate<-
                       wrap = TRUE)+
     ease_aes('cubic-in-out')+
   geom_text(data = fish_all%>%
-    filter(FINALVALUE > 6000000),
+    filter(FINALVALUE > 5000000),
     aes(label=FISH), 
     hjust = 1, vjust = 0, size = 3, color = "black")
 
@@ -271,10 +264,11 @@ animate(fish_animate, fps = 30, duration = 15)
 
 ##Statistical Analysis
 
-**Two sample t-test for value-to-weight ratio 1972 vs. 2022**
-```{r two sample t test between year 01 and year 50, message=FALSE, warning=FALSE, echo=FALSE}
+**Two sample t-test for value-to-weight ratio 2014 vs. 2022**
+```{r two sample t test between year 01 and year 10, message=FALSE, warning=FALSE, echo=FALSE}
 
 t_test_results <- fish_all %>%
+  filter(species_group !="Eels")%>%
   group_by(species_group) %>%
   summarise(p_value = t.test(
     value_weight_ratio[Year == "2014-01-01"], 
@@ -286,28 +280,37 @@ t_test_results <- fish_all %>%
 print(t_test_results)
 
 #two sample t-test with the output showing the p-values... species groups with 
-#significant p-values have a significant change between 1972 and 2022 in the
+#significant p-values have a significant change between 2014 and 2022 in the
 #value to weight ratio. 
 
 ```
 
-**ANOVA test across all years**
-```{r ANOVA, message=FALSE, warning=FALSE, echo=FALSE}
-fish_anova<-aov(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
+**Linear Model Value across all years**
+```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
+fish_value_lm<-lm(data=fish_all, FINALVALUE ~ Year) 
 
-summary(fish_anova)
+summary(fish_value_lm)
 ```
 
-**Linear Model ratio across all years**
+**Linear Model Weight across all years**
 ```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
-fish_lm<-lm(data=fish_all, FINALVALUE ~ FINALWEIGHT) 
+fish_weight_lm<-lm(data=fish_all, FINALWEIGHT ~ Year) 
 
-summary(fish_lm)
+summary(fish_weight_lm)
+  #significance!!
+```
+
+**Linear Model RATIO across all years**
+```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
+fish_ratio_lm<-lm(data=fish_all, FINALWEIGHT ~ FINALVALUE) 
+
+summary(fish_ratio_lm)
+#significance!!
 ```
 
 **MLR ratio across all years**
 ```{r multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
-fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + species_group)
+fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + Year + species_group)
 
 summary(fish_multi_lm)
 ```
