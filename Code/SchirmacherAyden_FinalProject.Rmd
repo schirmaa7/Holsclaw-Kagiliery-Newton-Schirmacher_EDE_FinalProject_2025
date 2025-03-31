@@ -21,6 +21,9 @@ remove(list=ls())
 #install.packages("gganimate")
 #install.packages("gapminder")
 #install.packages("scales")
+#install.packages("sf")
+#install.packages("leaflet")
+#install.packages("mapview")
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -31,11 +34,15 @@ library(gifski)
 library(gganimate)
 library(gapminder)
 library(scales)
+library(sf)
+library(leaflet)
+library(mapview)
 ```
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
 getwd()
 
+#catch and species information
 fish_2022<-read.csv(here("Data", "Raw", "2022.csv"))
 fish_2021<-read.csv(here("Data", "Raw", "2021.csv"))
 fish_2020<-read.csv(here("Data", "Raw", "2020.csv"))
@@ -57,9 +64,15 @@ fish_all <- bind_rows(
   "2021" = fish_2021, 
   "2022" = fish_2022, 
   .id = "Year")
+
+
+#spatial and county data
+fish_10year<-read.csv(here("Data", "Raw", "stats_fishies.csv"))
+fish_10year
+
 ```
 
-```{r cleaning the data, message=FALSE, warning=FALSE, include=FALSE}
+```{r SPECIES data cleaning, message=FALSE, warning=FALSE, include=FALSE}
 
 fish_all$FINALWEIGHT <- gsub("[,]", "", fish_all$FINALWEIGHT) 
 #^^remove commas from data
@@ -85,7 +98,20 @@ fish_all<-fish_all %>%
   ungroup()
 ```
 
-```{r group by species type, message=FALSE, warning=FALSE, include=FALSE}
+```{r COUNTY data cleaning, message=FALSE, warning=FALSE, include=FALSE}
+#group data by year and county
+fish_clean<-fish_10year%>%
+  filter(!is.na(Pounds))%>% #filter for NA
+  filter(!is.na(Value))%>% #filter for NA
+  mutate(Year = as.Date(paste0(Year, "-01-01"), format="%Y-%m-%d"))%>%
+  group_by(County)%>%
+  filter(n_distinct(Year) == length(unique(fish_10year$Year)))
+  #^^keep only observations in all years
+fish_clean
+```
+
+
+```{r SPECIES data group by species type, message=FALSE, warning=FALSE, include=FALSE}
 library(dplyr)
 
 fish_all <- fish_all %>%
@@ -147,43 +173,60 @@ fish_all <- fish_all %>%
 
 ```
 
-```{r new value to weight ratio, message=FALSE, warning=FALSE, include=FALSE}
+```{r SPECIES data new value to weight ratio, message=FALSE, warning=FALSE, include=FALSE}
 fish_all<-fish_all%>%
   mutate(value_weight_ratio=FINALVALUE/FINALWEIGHT)
 ```
 
-```{r create difference in means between 1972 and 2022, message=FALSE, warning=FALSE, include=FALSE}
-fish_year01<-fish_all%>%
+```{r SPECIES data create difference in means between 1972 and 2022, message=FALSE, warning=FALSE, include=FALSE}
+species_year01<-fish_all%>%
   filter(Year=="2014-01-01")
-fish_year50<-fish_all%>%
+species_year10<-fish_all%>%
   filter(Year=="2022-01-01")
 
-fish_diff<- 
-  left_join(fish_year50, fish_year01, by = "FISH", suffix = c("_2022", "_2014")) %>%
+species_diff<- 
+  left_join(species_year10, species_year01, by = "FISH", suffix = c("_2022", "_2014")) %>%
   mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
 
-fish_all <- left_join(fish_all, fish_diff %>% select(FISH, diff_means), by = "FISH")
+fish_all <- left_join(fish_all, species_diff %>% 
+                        select(FISH, diff_means), by = "FISH")
+
+```
+
+```{r COUNTY data create difference in means between 2014 and 2022, message=FALSE, warning=FALSE, include=FALSE}
+fish_clean<-fish_clean%>%
+  mutate(value_weight_ratio=Value/Pounds)
+
+county_year01<-fish_clean%>%
+  filter(Year=="2014-01-01")
+county_year10<-fish_clean%>%
+  filter(Year=="2022-01-01")
+
+county_diff<- 
+  left_join(county_year10, county_year01, by = "County", suffix = c("_2022", "_2014")) %>%
+  mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
+
+fish_clean <- left_join(fish_clean, county_diff 
+                      %>% select(County, diff_means), by = "County")
+
 
 ```
 
 
-##Exploratory Plots
-```{r value by year plot, message=FALSE, warning=TRUE, echo=FALSE}
-year_value_plot<-
-  ggplot(fish_all, aes(x = Year, y = FINALVALUE, col=species_group))+
+
+##Exploratory Plots -- Catch and Species Data
+```{r SPECIES data value by year plot, message=FALSE, warning=TRUE, echo=FALSE}
+ggplot(fish_all, aes(x = Year, y = FINALVALUE, col=species_group))+
   geom_point(alpha = 0.40)+
   labs(
     title="Final Value from Commercial Fishing by Species Type
     in North Carolina, 2014-2022",
     x="Year", y="Value ($USD)")+
   theme_bw()
-
-year_value_plot
 ```
 
-```{r weight by year plot, message=FALSE, warning=FALSE, echo=FALSE}
-year_weight_plot<-
-  ggplot(fish_all, aes(x = Year, y = FINALWEIGHT, col=species_group))+
+```{r SPECIES data weight by year plot, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(fish_all, aes(x = Year, y = FINALWEIGHT, col=species_group))+
   geom_point(alpha = 0.40)+
   labs(
     title="Final Weight from Commercial Fishing by Species Type
@@ -191,10 +234,9 @@ year_weight_plot<-
     x="Year", y="Weight (lbs)")+
   theme_bw()
 
-year_weight_plot
 ```
 
-```{r log plot value by species group, warning=FALSE, message=FALSE, echo=FALSE}
+```{r SPECIES data log plot value by species group, warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(fish_all, aes(x = Year, y = FINALVALUE, col = species_group))+
   geom_point()+
   scale_y_log10()+
@@ -205,9 +247,8 @@ ggplot(fish_all, aes(x = Year, y = FINALVALUE, col = species_group))+
   facet_wrap(~ species_group)
 ```
 
-```{r ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
-fish_plot<-
-  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
+```{r SPECIES data ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   geom_point(alpha = 0.40)+
   labs(
     title="Ratio of Fish Weight to Value from Commercial Fishing
@@ -220,13 +261,10 @@ fish_plot<-
     scale_y_continuous(labels=comma)+
   scale_x_continuous(labels=comma)+
   theme_bw()
-
-fish_plot
 ```
 
-```{r log ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
-fish_log_plot<-
-  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
+```{r SPECIES data log ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   scale_x_log10(labels=comma)+
   scale_y_log10(labels=comma)+
   geom_point(alpha = 0.40)+
@@ -236,40 +274,162 @@ fish_log_plot<-
   ylab("Value ($USD)")+
   theme_bw()
 
-fish_log_plot
 ```
 
-```{r animation over time, warning=FALSE, message=FALSE, echo=FALSE}
+```{r SPECIES data animation over time, warning=FALSE, message=FALSE, echo=FALSE}
 #this animation plot can't be knitted to a PDF file
-fish_animate<-
-  ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, 
-                       size=3,
-                       col = FISH)) +
-    geom_point(alpha = 0.7, show.legend = FALSE) +
-    scale_x_log10(labels=comma)+
-    scale_y_continuous(labels=comma)+
-    labs(title = 'Ratio of Value to Log Weight, Year: {closest_state}', 
-       x = 'Log Scale Weight (Units)', 
-       y = 'Value ($USD)') +
-    transition_states(Year, transition_length = 1, state_length = 1,
-                      wrap = TRUE)+
-    ease_aes('cubic-in-out')+
-  geom_text(data = fish_all%>%
-    filter(FINALVALUE > 5000000),
-    aes(label=FISH), 
-    hjust = 1, vjust = 0, size = 3, color = "black")
+#fish_animate<-
+  #ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, 
+         #              size=3,
+         #              col = FISH)) +
+    #geom_point(alpha = 0.7, show.legend = FALSE) +
+    #scale_x_log10(labels=comma)+
+   # scale_y_continuous(labels=comma)+
+   # labs(title = 'Ratio of Value to Log Weight, Year: {closest_state}', 
+    #   x = 'Log Scale Weight (Units)', 
+    #   y = 'Value ($USD)') +
+    #transition_states(Year, transition_length = 1, state_length = 1,
+   #                   wrap = TRUE)+
+    #ease_aes('cubic-in-out')+
+  #geom_text(data = fish_all%>%
+  #  filter(FINALVALUE > 5000000),
+  #  aes(label=FISH), 
+  #  hjust = 1, vjust = 0, size = 3, color = "black")
 
-animate(fish_animate, fps = 30, duration = 15)
+#animate(fish_animate, fps = 30, duration = 15)
 ```
 
-##Statistical Analysis
+
+##Exploratory Plots -- Spatial and County Data
+```{r COUNTY data spatial value plot, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(nc_county)+
+  geom_sf(aes(fill = Value))+
+    labs(
+    title= "Value of Commercial Seafood Landings by County
+    of Landing in North Carolina, 2014-2023")+
+  theme_bw()+
+  facet_wrap(~Year)
+```
+
+```{r COUNTY data spatial weight plot, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(nc_county)+
+  geom_sf(aes(fill = Pounds))+
+    labs(
+    title= "Weight of Commercial Seafood Landings by County
+    of Landing in North Carolina, 2014-2023")+
+  theme_bw()+
+  facet_wrap(~Year)
+```
+
+```{r COUNTY shapefile and joining dataset, warning=FALSE, message=FALSE, include=FALSE}
+nc_county<-st_read(here("./Data/Processed/Spatial/cb_2018_us_county_20m.shp"))%>%
+  filter(STATEFP == "37")
+
+fish_clean<-fish_clean%>%
+  mutate(NAME=County)
+
+nc_county<-nc_county%>%
+  inner_join(fish_clean, by="NAME")
+
+```
+
+
+```{r COUNTY weight-value ratio spatial plot, warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(nc_county)+
+  geom_sf(aes(fill = value_weight_ratio))+
+    labs(
+    title= "Weight-Value Ratio of Commercial Seafood Landings by
+    County of Landing in North Carolina, 2014-2023")+
+  theme_bw()+
+  facet_wrap(~Year)
+```
+
+
+```{r COUNTY weight-value ratio spatial plot 2014 vs. 2023, warning=FALSE, message=FALSE, echo=FALSE}
+ggplot(nc_county)+
+  geom_sf(aes(fill = diff_means))+
+    labs(
+    title= "Difference in Weight-Value Ratio of Commercial 
+    Seafood Landings Between 2014 and 2023 by
+    County of Landing in North Carolina")+
+  theme_bw()
+```
+
+```{r COUNTY value by summed totals, warning=FALSE, message=FALSE, echo=FALSE}
+
+spatial_value_plot<-
+  ggplot(nc_county)+
+  geom_sf(aes(fill = difference_value))+
+    labs(
+    title="Difference in Value of Commercial Seafood Landings Between 
+    2014 and 2023 by County of Landing in North Carolina")+
+  theme_bw()
+
+spatial_value_plot
+```
+
+
+
+##Statistical Analysis -- Catch and Species Data
 
 **Two sample t-test for value-to-weight ratio 2014 vs. 2022**
-```{r two sample t test between year 01 and year 10, message=FALSE, warning=FALSE, echo=FALSE}
+```{r SPECIES data two sample t test between year 01 and year 10, message=FALSE, warning=FALSE, echo=FALSE}
 
-t_test_results <- fish_all %>%
+species_t_test_results <- fish_all %>%
   filter(species_group !="Eels")%>%
   group_by(species_group) %>%
+  summarise(p_value = t.test(
+    value_weight_ratio[Year == "2014-01-01"], 
+    value_weight_ratio[Year == "2022-01-01"], 
+    alternative = "two.sided", 
+    var.equal = FALSE
+  )$p.value)
+
+print(species_t_test_results)
+
+#two sample t-test with the output showing the p-values... species groups with 
+#significant p-values have a significant change between 2014 and 2022 in the
+#value to weight ratio. 
+
+```
+
+**Linear Model Value across all years**
+```{r SPECIES data linear model, message=FALSE, warning=FALSE, echo=FALSE}
+species_value_lm<-lm(data=fish_all, FINALVALUE ~ Year) 
+
+summary(species_value_lm)
+```
+
+**Linear Model Weight across all years**
+```{r SPECIES data linear model, message=FALSE, warning=FALSE, echo=FALSE}
+fish_weight_lm<-lm(data=fish_all, FINALWEIGHT ~ Year) 
+
+summary(fish_weight_lm)
+  #significance!!
+```
+
+**Linear Model RATIO across all years**
+```{r SPECIES data linear model, message=FALSE, warning=FALSE, echo=FALSE}
+species_ratio_lm<-lm(data=fish_all, FINALWEIGHT ~ FINALVALUE) 
+
+summary(species_ratio_lm)
+#significance!!
+```
+
+**MLR ratio across all years**
+```{r SPECIES data multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
+species_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + Year + species_group)
+
+summary(species_multi_lm)
+```
+
+##Statistical Analysis -- County and Spatial Data
+
+**Two sample t-test for value-to-weight ratio 2014 vs. 2022**
+```{r COUNTY data two sample t test between year 01 and year 10, message=FALSE, warning=FALSE, echo=FALSE}
+
+county_t_test_results <- fish_clean %>%
+  group_by(County) %>%
   summarise(p_value = t.test(
     value_weight_ratio[Year == "2014-01-01"], 
     value_weight_ratio[Year == "2022-01-01"], 
@@ -286,14 +446,14 @@ print(t_test_results)
 ```
 
 **Linear Model Value across all years**
-```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_value_lm<-lm(data=fish_all, FINALVALUE ~ Year) 
 
 summary(fish_value_lm)
 ```
 
 **Linear Model Weight across all years**
-```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_weight_lm<-lm(data=fish_all, FINALWEIGHT ~ Year) 
 
 summary(fish_weight_lm)
@@ -301,7 +461,7 @@ summary(fish_weight_lm)
 ```
 
 **Linear Model RATIO across all years**
-```{r linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_ratio_lm<-lm(data=fish_all, FINALWEIGHT ~ FINALVALUE) 
 
 summary(fish_ratio_lm)
@@ -309,12 +469,10 @@ summary(fish_ratio_lm)
 ```
 
 **MLR ratio across all years**
-```{r multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r COUNTY multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + Year + species_group)
 
 summary(fish_multi_lm)
 ```
-
-
 
 
