@@ -20,6 +20,7 @@ remove(list=ls())
 #install.packages("gifski")
 #install.packages("gganimate")
 #install.packages("gapminder")
+#install.packages("scales")
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -29,34 +30,31 @@ library(here)
 library(gifski)
 library(gganimate)
 library(gapminder)
+library(scales)
 ```
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
 getwd()
 
 fish_2022<-read.csv(here("Data", "Raw", "2022.csv"))
+fish_2021<-read.csv(here("Data", "Raw", "2021.csv"))
+fish_2020<-read.csv(here("Data", "Raw", "2020.csv"))
+fish_2019<-read.csv(here("Data", "Raw", "2019.csv"))
+fish_2018<-read.csv(here("Data", "Raw", "2018.csv"))
 fish_2017<-read.csv(here("Data", "Raw", "2017.csv"))
-fish_2012<-read.csv(here("Data", "Raw", "2012.csv"))
-fish_2007<-read.csv(here("Data", "Raw", "2007.csv"))
-fish_2002<-read.csv(here("Data", "Raw", "2002.csv"))
-fish_1997<-read.csv(here("Data", "Raw", "1997.csv"))
-fish_1992<-read.csv(here("Data", "Raw", "1992.csv"))
-fish_1987<-read.csv(here("Data", "Raw", "1987.csv"))
-fish_1982<-read.csv(here("Data", "Raw", "1982.csv"))
-fish_1977<-read.csv(here("Data", "Raw", "1977.csv"))
-fish_1972<-read.csv(here("Data", "Raw", "1972.csv"))
+fish_2016<-read.csv(here("Data", "Raw", "2016.csv"))
+fish_2015<-read.csv(here("Data", "Raw", "2015.csv"))
+fish_2014<-read.csv(here("Data", "Raw", "2014.csv"))
 
 fish_all <- bind_rows(
-  "1972" = fish_1972, 
-  "1977" = fish_1977, 
-  "1982" = fish_1982, 
-  "1987" = fish_1987, 
-  "1992" = fish_1992, 
-  "1997" = fish_1997, 
-  "2002" = fish_2002, 
-  "2007" = fish_2007, 
-  "2012" = fish_2012, 
+  "2014" = fish_2014, 
+  "2015" = fish_2015, 
+  "2016" = fish_2016, 
   "2017" = fish_2017, 
+  "2018" = fish_2018, 
+  "2019" = fish_2019, 
+  "2020" = fish_2020, 
+  "2021" = fish_2021, 
   "2022" = fish_2022, 
   .id = "Year")
 ```
@@ -70,13 +68,6 @@ fish_all$FINALVALUE <- gsub("[,]", "", fish_all$FINALVALUE)
 fish_all$FINALVALUE <- gsub("\\$", "", fish_all$FINALVALUE)
 #^^remove dollar signs from data
 
-#Keeping only the fish observations that are present across all years
-fish_all<-fish_all %>%
-  group_by(FISH) %>%
-  filter(n_distinct(Year) == length(unique(fish_all$Year))) %>%
-  #^^keep only the observations across all years
-  ungroup()
-
 fish_all<-fish_all%>%
   filter(!is.na(FINALWEIGHT))%>% #filter for NA
   filter(!is.na(FINALVALUE))%>% #filter for NA
@@ -84,38 +75,80 @@ fish_all<-fish_all%>%
   mutate(FINALVALUE=as.integer(FINALVALUE))%>% #make data into numerical
  mutate(Year = as.Date(paste0(Year, "-01-01"), format="%Y-%m-%d")) 
 #^^create date object
+
+#Keeping only the fish observations that are present across all years
+fish_all<-fish_all %>%
+  select(Year, FISH, FINALWEIGHT, FINALVALUE)%>%
+  group_by(FISH) %>%
+  filter(n_distinct(Year) == length(unique(fish_all$Year))) %>%
+  #^^keep only the observations across all years
+  ungroup()
 ```
 
 ```{r group by species type, message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+
 fish_all <- fish_all %>%
   mutate(species_group = case_when(
-    FISH %in% c("Blue Crabs, Hard", "Shrimp (Heads On)") 
-      ~ "Crustaceans",
-    FISH %in% c("Clams, Hard (Meats)", "Oysters (Meats)") 
-      ~ "Bivalves (Shellfish)",
-    FISH %in% c("Flounder, Southern", "Flounder, Summer") 
-      ~ "Flatfish (Flounders)",
-    FISH %in% c("Mackerel, King", "Mackerel, Spanish") 
-      ~ "Mackerels",
-    FISH %in% c("Perch, White", "Perch, Yellow") 
-      ~ "Perches",
-    FISH %in% c("Mullet, Sea (Kingfishes)", "Mullet, Striped") 
-      ~ "Mullets",
+    FISH %in% c("Blue Crabs, Hard", "Blue Crabs, Peeler", 
+                "Blue Crabs, Soft", 
+                "Stone Crabs") 
+    ~ "Crab",
+    
+    FISH %in% c("Shrimp (Heads On)")
+    ~ "Shrimp",
+    
+    FISH %in% c("Clams, Hard (Meats)", "Clams, Hard (Numbers)", 
+                "Oysters (Bushels)", "Oysters (Meats)", 
+                "Scallop, Sea (Meats)", "Squid", 
+                "Whelks/Conchs (Meats)", "Octopus") 
+    ~ "Mollusks",
+
+    FISH %in% c("Dogfish, Smooth", "Dogfish, Spiny", 
+                "Sharks", "Skates") 
+    ~ "Sharks & Rays",
+
+    FISH %in% c("Eel, American") ~ "Eels",
+
+    FISH %in% c("Flounder, Southern", "Flounder, Summer", 
+                "Flounders, Other") 
+    ~ "Flatfish",
+
     FISH %in% c("Croaker, Atlantic", "Drum, Black", "Drum, Red", 
-                "Seatrout, Spotted", "Weakfish (Grey Trout)") 
-      ~ "Drums & Croakers",
-    FISH %in% c("Shad, American", "Shad, Hickory") 
-      ~ "Shads",
-    FISH %in% c("Bluefish", "Butterfish", "Carp", "Catfishes", "Cobia", 
-                "Eel, American", "Grunts", "Harvestfish (Starbutters)", 
-                "Pigfish", "Pompano", "Porgies", "Pufferfish", "Sea Basses",
-                "Sheepshead", "Snappers, Other", "Spadefish", "Spot", "Squid",
-                "Striped Bass") 
-      ~ "Other Common Finfish",
-    FISH %in% c("Unclassified Fish For Industrial/Bait", 
-                "Unclassified Fish for Food", "Unclassified Shellfish") 
-      ~ "Unclassified Categories",
-    TRUE ~ "Other"))
+                "Seatrout, Spotted", "Weakfish (Grey Trout)", 
+                "Spot") 
+    ~ "Drum & Croaker Family",
+
+    FISH %in% c("Grouper, Gag", "Grouper, Red", "Grouper, Scamp", 
+                "Grouper, Snowy", "Groupers, Other", "Sea Basses") 
+    ~ "Groupers & Sea Basses",
+
+    FISH %in% c("Snapper, Vermilion (Beeliner)", 
+                "Snappers, Other", "Porgies") 
+    ~ "Snappers & Porgies",
+
+    FISH %in% c("Mackerel, Atlantic (Boston)", "Mackerel, King", 
+                "Mackerel, Spanish", "Tuna, Bigeye", "Tuna, Bluefin",
+                "Tuna, Yellowfin", "Tunas, Other", 
+                "Tunny, Little (False Albacore)") ~ "Mackerels & Tunas",
+
+    FISH %in% c("Amberjacks", 
+                "Jacks (Crevalle, Rainbowrunner, Bluerunner)", "Pompano") 
+    ~ "Jacks & Pompanos",
+
+    FISH %in% c("Anglerfish (Monkfish Including Monklivers)", "Bluefish", "Bonito", 
+                "Butterfish", "Carp", "Catfishes", "Cobia", "Cutlassfish, Atlantic", 
+                "Dolphinfish", "Garfish", "Grunts", "Hakes", "Harvestfish (Starbutters)", 
+                "Hogfish (Hog Snapper)", "Mullet, Sea (Kingfishes)", "Mullet, Striped", 
+                "Perch, White", "Perch, Yellow", "Pigfish", "Pinfish", "Pufferfish", 
+                "Scup", "Shad, American", "Shad, Gizzard", "Shad, Hickory", "Sheepshead", 
+                "Skippers", "Spadefish", "Striped Bass", "Swordfish", "Tilefish, Blueline", 
+                "Tilefish, Other", "Triggerfish", "Wahoo") ~ "Other Finfish",
+    FISH %in% c("Unclassified Fish For Industrial/Bait", "Unclassified Fish for Food", 
+                "Unclassified Shellfish") ~ "Unclassified",
+    TRUE ~ "Other"
+  ))
+
 ```
 
 ```{r new value to weight ratio, message=FALSE, warning=FALSE, include=FALSE}
@@ -125,13 +158,13 @@ fish_all<-fish_all%>%
 
 ```{r create difference in means between 1972 and 2022, message=FALSE, warning=FALSE, include=FALSE}
 fish_year01<-fish_all%>%
-  filter(Year=="1972-01-01")
+  filter(Year=="2014-01-01")
 fish_year50<-fish_all%>%
   filter(Year=="2022-01-01")
 
 fish_diff<- 
-  left_join(fish_year50, fish_year01, by = "FISH", suffix = c("_2022", "_1972")) %>%
-  mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_1972)
+  left_join(fish_year50, fish_year01, by = "FISH", suffix = c("_2022", "_2014")) %>%
+  mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
 
 fish_all <- left_join(fish_all, fish_diff %>% select(FISH, diff_means), by = "FISH")
 
@@ -145,7 +178,7 @@ year_value_plot<-
   geom_point(alpha = 0.40)+
   labs(
     title="Final Value from Commercial Fishing by Species Type
-    in North Carolina, 1972-2022",
+    in North Carolina, 2014-2022",
     x="Year", y="Value ($USD)")+
   theme_bw()
 
@@ -158,7 +191,7 @@ year_weight_plot<-
   geom_point(alpha = 0.40)+
   labs(
     title="Final Weight from Commercial Fishing by Species Type
-    in North Carolina, 1972-2022",
+    in North Carolina, 2014-2022",
     x="Year", y="Weight (units)")+
   theme_bw()
 
@@ -168,10 +201,11 @@ year_weight_plot
 ```{r log plot value by species group, warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(fish_all, aes(x = Year, y = FINALVALUE, col = species_group))+
   geom_point()+
+  scale_y_log10()+
   geom_smooth(method = lm, color="red", linewidth=0.45)+
   labs(x="Year", y="Value ($USD)", 
   title = "Final Value from Commercial Fishing
-          by Species Type in North Carolina, 1972-2022")+
+          by Species Type in North Carolina, 2014-2022")+
   facet_wrap(~ species_group)
 ```
 
@@ -181,16 +215,14 @@ fish_plot<-
   geom_point(alpha = 0.40)+
   labs(
     title="Ratio of Fish Weight to Value from Commercial Fishing
-    by Species Type in North Carolina, 1972-2022",
+    by Species Type in North Carolina, 2014-2022",
     x="Weight (Units)", y="Value ($USD)")+
+  scale_y_continuous(labels=comma)+
+  scale_x_continuous(labels=comma)+
   geom_text_repel(data = fish_all%>%
-                  filter(abs(FINALVALUE) > 20000000),
+                  filter(abs(FINALVALUE) > 23000000),
                   aes(label = paste(FISH, format(Year, "%Y"))),
                   color = 'red', size=3)+
-  geom_text_repel(data = fish_all%>%
-                    filter(abs(FINALWEIGHT) > 100000000),
-                  aes(label=paste(FISH, format(Year, "%Y"))),
-                  color='red', size=3)+
   theme_bw()
 
 fish_plot
@@ -200,14 +232,14 @@ fish_plot
 fish_log_plot<-
   ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   scale_x_log10()+
-  #^^to meet normality assumptions, we could log scale the y axis as well
+  scale_y_log10()+
   geom_point(alpha = 0.40)+
   geom_text_repel(data = fish_all%>%
-                  filter(abs(FINALVALUE) > 20000000),
+                  filter(abs(FINALVALUE) > 23000000),
                   aes(label = paste(FISH, format(Year, "%Y"))),
                   color = 'red', size=3)+
   ggtitle("Logged Ratio of Fish Weight to Value from Commercial Fishing
-          by Species Type in North Carolina, 1972-2022")+
+          by Species Type in North Carolina, 2014-2022")+
   xlab("Log Scale Weight (Units)")+
   ylab("Value ($USD)")+
   theme_bw()
@@ -245,7 +277,7 @@ animate(fish_animate, fps = 30, duration = 15)
 t_test_results <- fish_all %>%
   group_by(species_group) %>%
   summarise(p_value = t.test(
-    value_weight_ratio[Year == "1972-01-01"], 
+    value_weight_ratio[Year == "2014-01-01"], 
     value_weight_ratio[Year == "2022-01-01"], 
     alternative = "two.sided", 
     var.equal = FALSE
