@@ -1,0 +1,151 @@
+---
+title: "SchirmacherAyden_FinalProject"
+
+title: "SchirmacherAyden_Counties_FinalProject"
+output:
+  html_document:
+    df_print: paged
+date: "`r Sys.Date()`"
+---
+##Data Wrangling
+```{r clear environment, include=FALSE, warning=FALSE, message=FALSE}
+remove(list=ls())
+```
+
+```{r packages, warning=FALSE, message=FALSE, include=FALSE}
+#install.packages("dplyr")
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+#install.packages("lubridate")
+#install.packages("ggrepel")
+#install.packages("here")
+#install.packages("gifski")
+#install.packages("gganimate")
+#install.packages("gapminder")
+#install.packages('scales')
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(ggrepel)
+library(here)
+library(gifski)
+library(gganimate)
+library(gapminder)
+library(scales)
+library(sf)
+library(leaflet)
+library(mapview)
+```
+
+```{r data import, message=FALSE, warning=FALSE, include=FALSE}
+getwd()
+
+fish_10year<-read.csv(here("Data", "Raw", "stats_fishies.csv"))
+head(fish_10year)
+
+```
+
+```{r cleaning the data, message=FALSE, warning=FALSE, include=FALSE}
+#group data by year and county
+
+fish_clean<-fish_10year%>%
+  filter(!is.na(Pounds))%>% #filter for NA
+  filter(!is.na(Value))%>% #filter for NA
+  mutate(Year = as.Date(paste0(Year, "-01-01"), format="%Y-%m-%d"))%>%
+  group_by(County)%>%
+  filter(n_distinct(Year) == length(unique(fish_10year$Year)))
+  #^^keep only observations in all years
+fish_clean
+
+```
+
+```{r create difference in means between 1972 and 2022, message=FALSE, warning=FALSE, include=FALSE}
+fish_year01<-fish_clean%>%
+  filter(Year=="2014-01-01")
+fish_year10<-fish_clean%>%
+  filter(Year=="2023-01-01")
+
+fish_diff<- 
+  left_join(fish_year10, fish_year01, by = "County") %>%
+  mutate(difference_pounds = Pounds.y - Pounds.x)%>%
+  mutate(difference_value = Value.y - Value.x)%>%
+  select(County, difference_pounds, difference_value)
+
+fish_diff
+
+fish_clean<-fish_clean%>%
+  left_join(fish_diff, by="County")
+
+```
+
+
+##Exploratory Plots
+```{r value by year plot, message=FALSE, warning=TRUE, echo=FALSE}
+year_value_plot<-
+  ggplot(fish_clean, aes(x = Year, y = Value, col=County))+
+  geom_point(alpha = 0.75)+
+  scale_y_continuous(labels = comma)+
+  labs(
+    title="Value of Commercial Seafood Landings by County of
+    Landing in North Carolina, 2014-2023",
+    x="Year", y="Value ($USD)")+
+  theme_bw()
+
+year_value_plot
+```
+
+```{r weight by year plot, message=FALSE, warning=FALSE, echo=FALSE}
+year_weight_plot<-
+  ggplot(fish_clean, aes(x = Year, y = Pounds, col=County))+
+  geom_point(alpha = 0.75)+
+  scale_y_continuous(labels = comma)+
+  labs(
+    title="Weight of Commercial Seafood Landings by County of
+    Landing in North Carolina, 2014-2023",
+    x="Year", y="Weight (lbs)")+
+  theme_bw()
+
+year_weight_plot
+```
+
+```{r county shapefile and joining dataset, warning=FALSE, message=FALSE, include=FALSE}
+nc_county<-st_read(here("./Data/Processed/Spatial/cb_2018_us_county_20m.shp"))%>%
+  filter(STATEFP == "37")
+
+fish_clean<-fish_clean%>%
+  mutate(NAME=County)
+
+nc_county<-nc_county%>%
+  inner_join(fish_clean, by="NAME")
+
+```
+
+```{r counties by summed totals, warning=FALSE, message=FALSE, echo=FALSE}
+
+spatial_weight_plot<-
+  ggplot(nc_county)+
+  geom_sf(aes(fill = difference_pounds))+
+  theme_minimal()+
+    labs(
+    title= "Difference in Weight of Commercial Seafood Landings Between 
+    2014 and 2023 by County of Landing in North Carolina")+
+  theme_bw()
+
+spatial_weight_plot
+```
+
+```{r counties by summed totals, warning=FALSE, message=FALSE, echo=FALSE}
+
+spatial_value_plot<-
+  ggplot(nc_county)+
+  geom_sf(aes(fill = difference_value))+
+  theme_minimal()+
+    labs(
+    title="Difference in Value of Commercial Seafood Landings Between 
+    2014 and 2023 by County of Landing in North Carolina")+
+  theme_bw()
+
+spatial_value_plot
+```
+
