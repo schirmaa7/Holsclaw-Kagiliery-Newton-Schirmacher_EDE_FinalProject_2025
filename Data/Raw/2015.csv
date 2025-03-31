@@ -1,32 +1,4 @@
-﻿,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-,,
-FISH,FINALWEIGHT,FINALVALUE
+﻿FISH,FINALWEIGHT,FINALVALUE
 Amberjacks,"146,544","$162,064 "
 Anglerfish (Monkfish Including Monklivers),"112,863","$106,081 "
 "Blue Crabs, Hard","31,019,406","$29,607,419 "
@@ -38,7 +10,7 @@ Butterfish,"62,658","$28,237 "
 Carp,"37,791","$3,071 "
 Catfishes,"918,085","$262,863 "
 "Clams, Hard (Meats)","415,027","$5,038,973 "
-"Clams, Hard (Numbers)","21,126,582",
+"Clams, Hard (Numbers)","21,126,582",.
 Cobia,"52,684","$113,176 "
 "Croaker,Atlantic","1,819,020","$1,646,361 "
 "Cutlassfish,Atlantic","178,077","$309,752 "
@@ -69,7 +41,7 @@ Hogfish (Hog Snapper),"8,238","$33,500 "
 "Mullet, Sea (Kingfishes)","784,753","$858,531 "
 "Mullet, Striped","1,247,129","$804,735 "
 Octopus,209,$388 
-Oysters (Bushels),"122,579",
+Oysters (Bushels),"122,579",.
 Oysters (Meats),"648,444","$3,936,572 "
 "Perch, White","161,596","$124,499 "
 "Perch, Yellow","41,655","$54,013 "
