@@ -428,6 +428,8 @@ summary(species_multi_lm)
 **Two sample t-test for value-to-weight ratio 2014 vs. 2022**
 ```{r COUNTY data two sample t test between year 01 and year 10, message=FALSE, warning=FALSE, echo=FALSE}
 
+#I CANNOT GET THIS TO WORK
+
 county_t_test_results <- fish_clean %>%
   group_by(County) %>%
   summarise(p_value = t.test(
@@ -439,7 +441,7 @@ county_t_test_results <- fish_clean %>%
 
 print(t_test_results)
 
-#two sample t-test with the output showing the p-values... species groups with 
+#two sample t-test with the output showing the p-values... counties with 
 #significant p-values have a significant change between 2014 and 2022 in the
 #value to weight ratio. 
 
@@ -447,32 +449,34 @@ print(t_test_results)
 
 **Linear Model Value across all years**
 ```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
-fish_value_lm<-lm(data=fish_all, FINALVALUE ~ Year) 
+county_value_lm<-lm(data=fish_clean, Value ~ Year) 
 
-summary(fish_value_lm)
+summary(county_value_lm)
 ```
 
 **Linear Model Weight across all years**
 ```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
-fish_weight_lm<-lm(data=fish_all, FINALWEIGHT ~ Year) 
+county_weight_lm<-lm(data=fish_clean, Pounds ~ Year) 
 
-summary(fish_weight_lm)
+summary(county_weight_lm)
   #significance!!
 ```
 
 **Linear Model RATIO across all years**
 ```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
-fish_ratio_lm<-lm(data=fish_all, FINALWEIGHT ~ FINALVALUE) 
+county_ratio_lm<-lm(data=fish_clean, Pounds ~ Value) 
 
-summary(fish_ratio_lm)
+summary(county_ratio_lm)
 #significance!!
 ```
 
 **MLR ratio across all years**
 ```{r COUNTY multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
-fish_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + Year + species_group)
+county_multi_lm<-lm(data = fish_clean, Value ~ Pounds + Year + County)
 
-summary(fish_multi_lm)
+#remembering that for this the intercept is Beaufort!!
+
+summary(county_multi_lm)
 ```
 
 
