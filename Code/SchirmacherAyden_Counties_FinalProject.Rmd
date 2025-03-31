@@ -42,8 +42,7 @@ library(mapview)
 getwd()
 
 fish_10year<-read.csv(here("Data", "Raw", "stats_fishies.csv"))
-head(fish_10year)
-
+fish_10year
 ```
 
 ```{r cleaning the data, message=FALSE, warning=FALSE, include=FALSE}
@@ -126,7 +125,6 @@ nc_county<-nc_county%>%
 spatial_weight_plot<-
   ggplot(nc_county)+
   geom_sf(aes(fill = difference_pounds))+
-  theme_minimal()+
     labs(
     title= "Difference in Weight of Commercial Seafood Landings Between 
     2014 and 2023 by County of Landing in North Carolina")+
@@ -140,11 +138,13 @@ spatial_weight_plot
 spatial_value_plot<-
   ggplot(nc_county)+
   geom_sf(aes(fill = difference_value))+
-  theme_minimal()+
     labs(
     title="Difference in Value of Commercial Seafood Landings Between 
     2014 and 2023 by County of Landing in North Carolina")+
-  theme_bw()
+  theme_bw()+
+  facet_wrap(~Year)
+
+#i would want to remove the coordinate axis labels
 
 spatial_value_plot
 ```
