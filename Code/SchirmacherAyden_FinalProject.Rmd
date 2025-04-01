@@ -297,9 +297,9 @@ ggplot(fish_clean, aes(x = Pounds, y = Value, col=County))+
 ggplot(fish_clean, aes(x = log(Pounds), y = log(Value), col=County))+
   geom_point(alpha = 0.40)+
   labs(
-    title="Ratio of Fish Weight to Value from Commercial Fishing
+    title="Logged Ratio of Fish Weight to Value from Commercial Fishing
     by County in North Carolina, 2014-2022",
-    x="Weight (lbs)", y="Value ($USD)")+
+    x="Log Scale Weight (lbs)", y="Log Scale Value ($USD)")+
     scale_y_continuous(labels=comma)+
   scale_x_continuous(labels=comma)+
   theme_bw()
