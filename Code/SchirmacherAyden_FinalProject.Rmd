@@ -1,6 +1,7 @@
 ---
 title: "SchirmacherAyden_FinalProject"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 date: "`r Sys.Date()`"
@@ -178,6 +179,7 @@ fish_all<-fish_all%>%
   mutate(value_weight_ratio=FINALVALUE/FINALWEIGHT)
 ```
 
+
 ```{r SPECIES data create difference in means between 1972 and 2022, message=FALSE, warning=FALSE, include=FALSE}
 species_year01<-fish_all%>%
   filter(Year=="2014-01-01")
@@ -215,28 +217,8 @@ fish_clean <- left_join(fish_clean, county_diff
 
 
 ##Exploratory Plots -- Catch and Species Data
-```{r SPECIES data value by year plot, message=FALSE, warning=TRUE, echo=FALSE}
-ggplot(fish_all, aes(x = Year, y = FINALVALUE, col=species_group))+
-  geom_point(alpha = 0.40)+
-  labs(
-    title="Final Value from Commercial Fishing by Species Type
-    in North Carolina, 2014-2022",
-    x="Year", y="Value ($USD)")+
-  theme_bw()
-```
 
-```{r SPECIES data weight by year plot, message=FALSE, warning=FALSE, echo=FALSE}
-ggplot(fish_all, aes(x = Year, y = FINALWEIGHT, col=species_group))+
-  geom_point(alpha = 0.40)+
-  labs(
-    title="Final Weight from Commercial Fishing by Species Type
-    in North Carolina, 2014-2022",
-    x="Year", y="Weight (lbs)")+
-  theme_bw()
-
-```
-
-```{r SPECIES data log plot value by species group, warning=FALSE, message=FALSE, echo=FALSE}
+```{r SPECIES data log plot value by species group, warning=FALSE, message=FALSE, echo=FALSE, fig.height=12, fig.width=8}
 ggplot(fish_all, aes(x = Year, y = FINALVALUE, col = species_group))+
   geom_point()+
   scale_y_log10()+
@@ -245,7 +227,7 @@ ggplot(fish_all, aes(x = Year, y = FINALVALUE, col = species_group))+
   labs(x="Year", y="Value ($USD)", 
   title = "Final Value from Commercial Fishing
           by Species Type in North Carolina, 2014-2022")+
-  facet_wrap(~ species_group)
+  facet_wrap(~ species_group, ncol=2)
 ```
 
 ```{r SPECIES data ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
@@ -255,10 +237,6 @@ ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
     title="Ratio of Fish Weight to Value from Commercial Fishing
     by Species Type in North Carolina, 2014-2022",
     x="Weight (lbs)", y="Value ($USD)")+
-  geom_text_repel(data = fish_all%>%
-                  filter(abs(FINALVALUE) > 23000000),
-                  aes(label = paste(FISH, format(Year, "%Y"))),
-                  color = 'red', size=3)+
     scale_y_continuous(labels=comma)+
   scale_x_continuous(labels=comma)+
   theme_bw()
@@ -272,7 +250,7 @@ ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   ggtitle("Logged Ratio of Fish Weight to Value from Commercial Fishing
           by Species Type in North Carolina, 2014-2022")+
   xlab("Log Scale Weight (lbs)")+
-  ylab("Value ($USD)")+
+  ylab("Log Scale Value ($USD)")+
   theme_bw()
 
 ```
@@ -302,6 +280,33 @@ ggplot(fish_all, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
 
 
 ##Exploratory Plots -- Spatial and County Data
+
+```{r COUNTY data ratio plot, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(fish_clean, aes(x = Pounds, y = Value, col=County))+
+  geom_point(alpha = 0.40)+
+  labs(
+    title="Ratio of Fish Weight to Value from Commercial Fishing
+    by County in North Carolina, 2014-2022",
+    x="Weight (lbs)", y="Value ($USD)")+
+    scale_y_continuous(labels=comma)+
+  scale_x_continuous(labels=comma)+
+  theme_bw()
+```
+
+```{r COUNTY log data ratio plot, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(fish_clean, aes(x = log(Pounds), y = log(Value), col=County))+
+  geom_point(alpha = 0.40)+
+  labs(
+    title="Ratio of Fish Weight to Value from Commercial Fishing
+    by County in North Carolina, 2014-2022",
+    x="Weight (lbs)", y="Value ($USD)")+
+    scale_y_continuous(labels=comma)+
+  scale_x_continuous(labels=comma)+
+  theme_bw()
+```
+
+
+
 
 ```{r COUNTY shapefile and joining dataset, warning=FALSE, message=FALSE, include=FALSE}
 nc_county<-st_read(here("./Data/Processed/Spatial/cb_2018_us_county_20m.shp"))%>%
@@ -384,14 +389,14 @@ print(species_t_test_results)
 ```
 
 **Linear Model Value across all years**
-```{r SPECIES data linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r SPECIES data value linear model, message=FALSE, warning=FALSE, echo=FALSE}
 species_value_lm<-lm(data=fish_all, FINALVALUE ~ Year) 
 
 summary(species_value_lm)
 ```
 
 **Linear Model Weight across all years**
-```{r SPECIES data linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r SPECIES data weight linear model, message=FALSE, warning=FALSE, echo=FALSE}
 fish_weight_lm<-lm(data=fish_all, FINALWEIGHT ~ Year) 
 
 summary(fish_weight_lm)
@@ -399,8 +404,8 @@ summary(fish_weight_lm)
 ```
 
 **Linear Model RATIO across all years**
-```{r SPECIES data linear model, message=FALSE, warning=FALSE, echo=FALSE}
-species_ratio_lm<-lm(data=fish_all, FINALWEIGHT ~ FINALVALUE) 
+```{r SPECIES data ratio linear model, message=FALSE, warning=FALSE, echo=FALSE}
+species_ratio_lm<-lm(data=fish_all, log(FINALWEIGHT) ~ log(FINALVALUE))
 
 summary(species_ratio_lm)
 #significance!!
@@ -408,7 +413,8 @@ summary(species_ratio_lm)
 
 **MLR ratio across all years**
 ```{r SPECIES data multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
-species_multi_lm<-lm(data = fish_all, FINALVALUE ~ FINALWEIGHT + Year + species_group)
+#log transform the variables to meet normality assumptions
+species_multi_lm<-lm(data = fish_all, log(FINALVALUE) ~ log(FINALWEIGHT) + Year + species_group)
 
 summary(species_multi_lm)
 ```
@@ -420,16 +426,16 @@ summary(species_multi_lm)
 
 #I CANNOT GET THIS TO WORK
 
-county_t_test_results <- fish_clean %>%
-  group_by(County) %>%
-  summarise(p_value = t.test(
-    value_weight_ratio[Year == "2014-01-01"], 
-    value_weight_ratio[Year == "2022-01-01"], 
-    alternative = "two.sided", 
-    var.equal = FALSE
-  )$p.value)
+#county_t_test_results <- fish_clean %>%
+  #group_by(County) %>%
+  #summarise(p_value = t.test(
+  #  value_weight_ratio[Year == "2014-01-01"], 
+  #  value_weight_ratio[Year == "2022-01-01"], 
+  #  alternative = "two.sided", 
+  #  var.equal = FALSE
+ # )$p.value)
 
-print(t_test_results)
+#print(t_test_results)
 
 #two sample t-test with the output showing the p-values... counties with 
 #significant p-values have a significant change between 2014 and 2022 in the
@@ -438,14 +444,14 @@ print(t_test_results)
 ```
 
 **Linear Model Value across all years**
-```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r COUNTY value linear model, message=FALSE, warning=FALSE, echo=FALSE}
 county_value_lm<-lm(data=fish_clean, Value ~ Year) 
 
 summary(county_value_lm)
 ```
 
 **Linear Model Weight across all years**
-```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
+```{r COUNTY weight linear model, message=FALSE, warning=FALSE, echo=FALSE}
 county_weight_lm<-lm(data=fish_clean, Pounds ~ Year) 
 
 summary(county_weight_lm)
@@ -453,8 +459,8 @@ summary(county_weight_lm)
 ```
 
 **Linear Model RATIO across all years**
-```{r COUNTY linear model, message=FALSE, warning=FALSE, echo=FALSE}
-county_ratio_lm<-lm(data=fish_clean, Pounds ~ Value) 
+```{r COUNTY ratio linear model, message=FALSE, warning=FALSE, echo=FALSE}
+county_ratio_lm<-lm(data=fish_clean, log(Pounds) ~ log(Value)) 
 
 summary(county_ratio_lm)
 #significance!!
