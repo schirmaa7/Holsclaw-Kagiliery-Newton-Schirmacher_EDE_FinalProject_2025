@@ -442,7 +442,7 @@ print(species_t_test_results)
 
 #two sample t-test with the output showing the p-values... species groups with 
 #significant p-values have a significant change between 2014 and 2022 in the
-#value to weight ratio. 
+#value to weight ratio. What do you mean? Just because the P-values chnage a lot does not make that significant...?
 
 ```
 
@@ -514,6 +514,8 @@ summary(species_multi_lm)
 #I CANNOT GET THIS TO WORK
 
 #this does not work becase you only have 1 observation per group I think, cannot use a t-test then
+#I wouod use a Wilcoxon signed-ranked test instead bc it is free from parametric assumptions
+# Kruskal-Wallis Test is a non-parametic anova
 
 #county_t_test_results <- fish_clean %>%
   #group_by(County) %>%
@@ -536,9 +538,6 @@ fish_clean %>%
   filter(Year %in% as.Date(c("2014-01-01", "2022-01-01"))) %>%
   group_by(County, Year) %>%
   summarise(n = sum(!is.na(value_weight_ratio)), .groups = "drop")
-
-
-
 
 ```
 
