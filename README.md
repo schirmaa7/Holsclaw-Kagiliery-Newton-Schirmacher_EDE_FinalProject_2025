@@ -14,6 +14,11 @@ relevant analysis goals. What, why, where, when, how?>
 
 ## Investigators
 
+Natalie Holsclaw, natalie.holsclaw@duke.edu
+Julia Kagiliery
+Tori Newton 
+Ayden Schirmacher
+
 <name(s), affiliation(s), contact information, roles (if applicable)>
 
 ## Keywords
