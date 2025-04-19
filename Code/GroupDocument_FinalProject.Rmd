@@ -217,9 +217,9 @@ county_clean <- left_join(county_clean, county_diff
 
 ##Exploratory Plots -- Catch and Species Data
 
-*Average Weight-Value Ratio by Species Over Time*
-```{r}
-# Mean value ($) across species groups 
+*FIGURE 1. Average Weight-Value Ratio by Species Over Time*
+```{r mean weight-value ratio across species groups}
+# Mean ratio ($) across species groups 
 summary_table <- species_clean %>%
   group_by(Year, species_group) %>%
   summarize(Mean = mean(value_weight_ratio, na.rm = TRUE),
@@ -231,7 +231,7 @@ print(summary_table)
 
 # Visualization 
 ggplot(summary_table, aes(x = Year, y = Mean, color = species_group)) +
-  geom_line() +  # Line plot for the mean over time
+  geom_line() +  # Line plot for the mean ratio over time
   geom_point() +  # Add points to show individual data points
   labs(
     title = "Mean Weight-Value Ratio by Species Group over Time",
@@ -244,7 +244,7 @@ ggplot(summary_table, aes(x = Year, y = Mean, color = species_group)) +
   ####!!! without the facet wrap the graph seems too busy, but up to you to decide!!
 ```
 
-*Catch Weight-to-Value Data Categorized by Species*
+*FIGURE 2. Catch Weight-to-Value Data Categorized by Species*
 ```{r SPECIES data ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(species_clean, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   geom_point(alpha = 0.40)+
@@ -257,7 +257,7 @@ ggplot(species_clean, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   theme_bw()
 ```
 
-*Catch Weight-to-Value Data Categorized by Species with Log Transformations on X and Y Axis*
+*FIGURE 3.Catch Weight-to-Value Data Categorized by Species with Log Transformations on X and Y Axis*
 ```{r SPECIES data log ratio plot, warning=FALSE, message=FALSE, echo=FALSE}
 ggplot(species_clean, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
   scale_x_log10(labels=comma)+
@@ -271,7 +271,7 @@ ggplot(species_clean, aes(x = FINALWEIGHT, y = FINALVALUE, col=species_group))+
 
 ```
 
-*ANIMATED Annual Catch Weight-to-Value Data Categorized by Species with Log Transformations on X and Y Axis and Labels on Outlying Values*
+*FIGURE 4. ANIMATED Annual Catch Weight-to-Value Data Categorized by Species with Log Transformations on X and Y Axis and Labels on Outlying Values*
 ```{r SPECIES data animation over time, warning=FALSE, message=FALSE, echo=FALSE}
 species_animate<-
   ggplot(species_clean, aes(x = FINALWEIGHT, y = FINALVALUE, 
@@ -294,7 +294,7 @@ species_animate<-
 animate(species_animate, fps = 30, duration = 15)
 ```
 
-*Catch Weight-to-Value Data Categorized by County*
+*FIGURE 5. Catch Weight-to-Value Data Categorized by County*
 ```{r COUNTY shapefile and joining dataset, warning=FALSE, message=FALSE, include=FALSE}
 nc_county<-st_read(here("./Data/Processed/Spatial/cb_2018_us_county_20m.shp"))%>%
   filter(STATEFP == "37")
@@ -314,7 +314,7 @@ ggplot(nc_county)+
   facet_wrap(~Year)
 ```
 
-*Catch Data County Spatial Plots Categorized by Value*
+*FIGURE 6. Catch Data County Spatial Plots Categorized by Value*
 ```{r COUNTY data spatial value plot, message=FALSE, warning=FALSE, echo=FALSE}
 #ggplot(nc_county)+
 #  geom_sf(aes(fill = Value))+
@@ -325,7 +325,7 @@ ggplot(nc_county)+
 #  facet_wrap(~Year)
 ```
 
-*Catch Data County Spatial Plots Categorized by Weight*
+*FIGURE 7. Catch Data County Spatial Plots Categorized by Weight*
 ```{r COUNTY data spatial weight plot, message=FALSE, warning=FALSE, echo=FALSE}
 #ggplot(nc_county)+
 #  geom_sf(aes(fill = Pounds))+
@@ -369,30 +369,23 @@ print(species_t_test_results)
 
 **Linear Model of Value to Weight**
 ```{r SPECIES data ratio linear model, message=FALSE, warning=FALSE, echo=FALSE}
-species_ratio_lm<-lm(data=fish_all, log(FINALWEIGHT) ~ log(FINALVALUE))
+species_ratio_lm<-lm(data=species_clean, log(FINALWEIGHT) ~ log(FINALVALUE))
 
 summary(species_ratio_lm)
 #significance!!
 ```
 
 
-**Linear Model Value to Weight Ratio across all years**
-```{r SPECIES data value linear model, message=FALSE, warning=FALSE, echo=FALSE}
-species_yearratio_lm<-lm(data=species_clean, value_weight_ratio ~ Year) 
-summary(species_yearratio_lm)
-
+**MLR ratio across all years**
+```{r SPECIES data multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
+#log transform the variables to meet normality assumptions
+species_multi_lm<-lm(data = species_clean, value_weight_ratio ~ Year + species_group)
 
 fish_anova <- aov(value_weight_ratio ~ species_group, data = species_clean)
 summary(fish_anova)
 # There is a significant different in value across species groups.
 fish_tukey <- TukeyHSD(fish_anova)
 fish_tukey
-```
-
-**MLR ratio across all years**
-```{r SPECIES data multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
-#log transform the variables to meet normality assumptions
-species_multi_lm<-lm(data = species_clean, log(FINALVALUE) ~ log(FINALWEIGHT) + Year + species_group)
 
 summary(species_multi_lm)
 plot(species_multi_lm)
