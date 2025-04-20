@@ -14,10 +14,46 @@ output:
 \listoffigures 
 \newpage
 
+# Rationale and Research Questions
+
+
+# Main Research Question: Is there a difference in the value-to-weight ratio from commercial landings in North Carolina between 2014-2022?
+
+# Sub-question A: Is there a difference in the value-to-weight ratio from commercial landings by SPECIES in North Carolina between 2014-2022?
+
+# Sub-question B: Is there a difference in the value-to-weight ratio from commercial landings by COUNTY in North Carolina between 2014-2022?
+
+
+
+\newpage
+
+# Dataset Information
+
+## The data used in this report come from commercial landings data collected by the North Carolina Department of Environmental Quality (NCDEQ). The North Carolina Division of Marine Fisheries collects data from commercial fishers via a 'Trip Ticket Program' where fishermen are required to report information related to their catch (1). Purchasers of seafood from commercial fishermen are required to collect this data in a form and submit it the N.C. Division of Marine Fisheries on a monthly basis. The goal of the program is to obtain accurate reportings of commercial fishing so that fisheries managers can manage marine resources in a sustainable way. Data on commercial landings by county is also provided by the NCDEQ in their License and Statistic annual report and is used in this study as well. 
+
+## The fisheries data from the NCDEQ dates back to 1972 and can be exported in .csv files by year with information on the species common name, weight, and landings value. For the purposes of this study, we utilized commercial landings data from 2014 to 2022. Because each year was downloaded as an individual .csv file, our first step in data wrangling was binding the data together. The data was cleaned to ensure it was in the proper format for analyses including corrections to the date format and removal of non-numeric characters from the landings value data. The data were filtered to only include species that had data across all years in the time period of this study. To compare larger groups of species, species were combined into sub-groups - i.e. crustaceans, mollusks, sharks and rays, etc. To get an idea of the true value of species groups, the value-to-weight ratio was calculated for each.  
+
+```{r}
+
+data_summary <- data.frame(
+  Variable = c("Fish", "Final Weight", "Final Value", "Species Group", 
+               "Value Weight Ratio", "County"),
+  Unit = c("Species common name", "lbs", "US Dollars", "General species category", 
+           "US Dollar/lbs", "NC Counties"),
+  Range = c("81 species", "88 - 31,019,406 lbs", "$16 - $29,954,723", "13 groups",
+            "0.05 - 16.3", "NC Counties with landings data")
+)
+
+kable(data_summary)
+
+```
+
+
 ```{r setup, include=FALSE}
 # Set your working directory
+getwd()
 
-# Load your packages
+# Load neccesary packages
 #install.packages("dplyr")
 #install.packages("tidyverse")
 #install.packages("ggplot2")
@@ -31,6 +67,7 @@ output:
 #install.packages("sf")
 #install.packages("leaflet")
 #install.packages("mapview")
+#install.packages("knitr")
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -44,15 +81,15 @@ library(scales)
 library(sf)
 library(leaflet)
 library(mapview)
+library(knitr)
 
-# Set your ggplot theme
 
-# Load your datasets
 
 ```
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
-getwd()
+
+
 
 #catch and species information
 fish_2022<-read.csv(here("Data", "Raw", "2022.csv"))
@@ -221,15 +258,6 @@ county_clean <- left_join(county_clean, county_diff
 ```
 
 
-# Rationale and Research Questions
-
-## Question 1 : Is there a significant difference in the weight-value ratio from commercial landings across species groups, time, and counties in North Carolina between 2014 and 2022?
-
-
-
-\newpage
-
-# Dataset Information
 
 
 
@@ -409,4 +437,6 @@ summary(species_multi_lm)
 \newpage
 
 # References
-<add references here if relevant, otherwise delete this section> 
+
+### (1) Trip Ticket Program | NC DEQ. (n.d.). Retrieved April 20, 2025, from https://www.deq.nc.gov/about/divisions/marine-fisheries/science-and-statistics/trip-ticket-program
+
