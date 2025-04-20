@@ -23,11 +23,11 @@ relevant analysis goals. What, why, where, when, how?>
 
 ## Keywords
 
-<add relevant keywords here>
+### Fisheries management, commercial landings, North Carolina
 
 ## Database Information
 
-### All data was obtained from the North Carolina Department of Environmental
+### All raw data was obtained from the North Carolina Department of Environmental
 Quality (NCDEQ). 
 
 <describe the origin of all data in the repository, including data collected from 
@@ -37,21 +37,44 @@ from an outside database, the date(s) of data access should also be included.>
 
 ## Folder structure, file formats, and naming conventions 
 
-<describe the folders contained in the repository, including what type of files 
-they contain>
+### Folders in the repository:
+#### Code: Contains R markdown files with all code used in the data exploration
+#### and analysis 
+#### Data: Contains a 'Raw' folder with raw data files downloaded from the NCDEQ,
+#### the 'Processed' folder contains data relevant to our spatial analysis. 
 
-<describe the formats of files for the various purposes contained in the repository>
 
-<describe your file naming conventions>
+### File formatting:
+#### Raw data are contained in .csv files, code is kept in R markdown files,
+#### the final report is also in a R markdown format, and county data is in a 
+#### shapefile format. 
+
+
+### Naming Conventions
+#### Raw data are named with the year they represent. The final script is named
+#### 'GroupDocument_FinalProject' previous versions of scripts are named with
+#### the owners name and '_FinalProject'. The final report contains author last
+#### names and '_ENV872_Project'. 
 
 ## Metadata
 
-<For each data file in the repository, describe the data contained in each column. 
-Include the column name, a description of the information, the class of data, and 
-any units associated with the data. Create a list or table for each data file.> 
+
+### Raw data files (named by year, same information for all years):
+#### Columns:
+#### 'Fish' - species common name (chr)
+#### 'Final Weight' - Weight of landings in pounds (lbs) - (int)
+#### 'Final Value' - Value in US Dollars of landings (int)
+#### Raw county data file: 'stats_fishies.csv'
+#### Columns:
+#### 'County' - North Carolina county (chr)
+#### 'Year' - Year the data represents (Date)
+#### 'Pounds' - Weight of landings in pounds (lbs) - (int)
+#### 'Value' - Value in US Dollars of landings - (int)
 
 ## Scripts and code
 
 <list any software scripts/code contained in the repository and a description of 
 their purpose.>
+
+
 
