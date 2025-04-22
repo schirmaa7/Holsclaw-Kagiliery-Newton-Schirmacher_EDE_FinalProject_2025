@@ -144,11 +144,12 @@ fish_all<-fish_all%>%
 
 #Keeping only the fish observations that are present across all years
 species_clean<-fish_all %>%
-  select(Year, FISH, FINALWEIGHT, FINALVALUE)%>%
+  dpylr::select(Year, FISH, FINALWEIGHT, FINALVALUE)%>%
   group_by(FISH) %>%
   filter(n_distinct(Year) == length(unique(fish_all$Year))) %>%
   #^^keep only the observations across all years
   ungroup()
+
 ```
 
 ```{r COUNTY data cleaning, message=FALSE, warning=FALSE, include=FALSE}
