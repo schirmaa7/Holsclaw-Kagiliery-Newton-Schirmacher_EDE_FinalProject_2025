@@ -14,19 +14,6 @@ remove(list=ls())
 ```
 
 ```{r packages, warning=FALSE, message=FALSE, include=FALSE}
-#install.packages("dplyr")
-#install.packages("tidyverse")
-#install.packages("ggplot2")
-#install.packages("lubridate")
-#install.packages("ggrepel")
-#install.packages("here")
-#install.packages("gifski")
-#install.packages("gganimate")
-#install.packages("gapminder")
-#install.packages("scales")
-#install.packages("sf")
-#install.packages("leaflet")
-#install.packages("mapview")
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -40,6 +27,9 @@ library(scales)
 library(sf)
 library(leaflet)
 library(mapview)
+library(MASS)
+library(lmtest)
+library(mgcv)
 ```
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
@@ -72,7 +62,6 @@ fish_all <- bind_rows(
 #spatial and county data
 fish_10year<-read.csv(here("Data", "Raw", "stats_fishies.csv"))
 fish_10year
-
 ```
 
 ```{r SPECIES data cleaning, message=FALSE, warning=FALSE, include=FALSE}
@@ -88,7 +77,7 @@ fish_all<-fish_all%>%
   mutate(FINALWEIGHT=as.integer(FINALWEIGHT))%>% #make data into numerical
   mutate(FINALVALUE=as.integer(FINALVALUE))%>% #make data into numerical
   mutate(Year = as.Date(paste0(Year, "-01-01"), format="%Y-%m-%d"))%>%
-  #^^create date object
+  #^^create date object, keep 01-01 for plotting
   filter(!is.na(FINALWEIGHT))%>% #filter for NA
   filter(!is.na(FINALVALUE)) #filter for NA
 
@@ -114,7 +103,6 @@ county_clean<-fish_10year%>%
 
 
 ```{r SPECIES data group by species type, message=FALSE, warning=FALSE, include=FALSE}
-
 species_clean <- species_clean %>%
   mutate(species_group = case_when(
     FISH %in% c("Blue Crabs, Hard", "Blue Crabs, Peeler", 
@@ -339,42 +327,210 @@ ggplot(nc_county)+
 ##Statistical Analysis -- Catch and Species Data
 
 ```{r}
-#NEED SUMMARY STATISTICS
-#NEED WILCOX RANKED TEST
+SummaryStats <- fish_all |>
+  mutate(AverageValueWeightRatio = FINALVALUE / FINALWEIGHT) |>  # First calculate the ratio for each row
+  group_by(FISH) |>
+  summarize(
+    AverageWeight = mean(FINALWEIGHT, na.rm = TRUE),
+    SDWeight = sd(FINALWEIGHT, na.rm = TRUE),
+    AverageValue = mean(FINALVALUE, na.rm = TRUE),
+    SDValue = sd(FINALVALUE, na.rm = TRUE),
+    AverageValueWeightRatio = mean(AverageValueWeightRatio, na.rm = TRUE),  # Calculate the mean of the ratio
+    .groups = "drop"  # This removes the grouping structure after summarization
+  )
+
+print(SummaryStats)
 ```
 
-**Two sample t-test for value-to-weight ratio 2014 vs. 2022**
-```{r SPECIES data two sample t test between year 01 and year 10, message=FALSE, warning=FALSE, echo=FALSE}
+```{r}
+# Apply the Shapiro-Wilk test on FINALWEIGHT to see if it is normal
+#if p is less than 0.05, Not normal
+shapiro_test_resultWeight <- shapiro.test(fish_all$FINALWEIGHT)
+print(shapiro_test_resultWeight)
 
-species_t_test_results <- species_clean %>%
-  filter(species_group !="Eels")%>%
+shapiro_test_resultValue <- shapiro.test(fish_all$FINALVALUE)
+print(shapiro_test_resultValue)
+
+#these are not normally distributed
+```
+
+
+```{r}
+species_wilcox_results <- species_clean %>%
+  filter(species_group != "Eels") %>%
   group_by(species_group) %>%
-  summarise(p_value = t.test(
+  summarise(p_value = wilcox.test(
     value_weight_ratio[Year == "2014-01-01"], 
     value_weight_ratio[Year == "2022-01-01"], 
-    alternative = "two.sided", 
-    var.equal = FALSE
+    paired = TRUE,  # Indicates that the samples are paired
+    alternative = "two.sided"  # Two-sided test
   )$p.value)
 
-print(species_t_test_results)
+print(species_wilcox_results)
 
-#two sample t-test with the output showing the p-values... species groups with 
-#significant p-values have a significant change between 2014 and 2022 in the
-#value to weight ratio. 
+#shows us that other finfish, mackerals and tunas, groupers & seabass have all 
+#changed in value from 2014 to 2022
 
-#What do you mean? Just because the P-values change a lot does not make that significant...?
-
+#we use this bc we don't assume normality
 ```
 
+```{r}
+# Log transform the weighta and value column (they are all positive)
+fish_all$log_FINALWEIGHT <- log(fish_all$FINALWEIGHT)
+fish_all$log_FINALVALUE <- log(fish_all$FINALVALUE)
+
+shapiro_test_logWeight <- shapiro.test(fish_all$log_FINALWEIGHT)
+shapiro_test_logValue <- shapiro.test(fish_all$log_FINALVALUE)
+
+# Print the results
+print(shapiro_test_logWeight)
+print(shapiro_test_logValue)
+
+#logs do not normalize data
+```
+
+```{r}
+fish_all$inv_FINALWEIGHT <- 1 / fish_all$FINALWEIGHT
+shapiro_test_invWEIGHT <- shapiro.test(fish_all$inv_FINALWEIGHT)
+print(shapiro_test_invWEIGHT)
+
+fish_all$inv_FINALVALUE <- 1 / fish_all$FINALVALUE
+shapiro_test_invVALUE <- shapiro.test(fish_all$inv_FINALVALUE)
+print(shapiro_test_invVALUE)
+
+#inverses do not normalize data
+```
+
+```{r}
+# Apply Box-Cox transformation to see if this will force data to be normal
+boxcox_result <- boxcox(FINALWEIGHT ~ 1, data = fish_all, lambda = seq(-2, 2, by = 0.1))
+best_lambda <- boxcox_result$x[which.max(boxcox_result$y)]
+fish_all$boxcox_FINALWEIGHT <- (fish_all$FINALWEIGHT^best_lambda - 1) / best_lambda
+
+# Shapiro-Wilk test on Box-Cox transformed data
+shapiro_test_boxcox <- shapiro.test(fish_all$boxcox_FINALWEIGHT)
+print(shapiro_test_boxcox)
+#nope, I am out of tricks cannot force this data to be normal
+```
 
 **Linear Model of Value to Weight**
 ```{r SPECIES data ratio linear model, message=FALSE, warning=FALSE, echo=FALSE}
+#none normal data but maybe we can get away with it
 species_ratio_lm<-lm(data=species_clean, log(FINALWEIGHT) ~ log(FINALVALUE))
 
 summary(species_ratio_lm)
 #significance!!
+
+#sincer our data is not normal, maybe we can still use linear modeling if the 
+#residuals of the linear model are normally distributed 
+
+# Get residuals
+res <- residuals(species_ratio_lm)
+# Test for normality
+shapiro.test(res)
+
+#they are not, we cannot use linear modeling
+
+bptest(species_ratio_lm)
+#really cannot do linear modeling
 ```
 
+```{r}
+# so we are still interested in if weight and value are related 
+species_correlation <- species_clean %>%
+  filter(species_group != "Eels") %>%
+  group_by(species_group, Year) %>%
+  summarise(
+    pearson_correlation = cor(FINALWEIGHT, FINALVALUE, method = "pearson", use = "complete.obs"),
+    .groups = "drop"
+  )
+
+print(species_correlation)
+# yes they are 
+
+```
+
+
+```{r}
+#generalized linear model does not need normallity
+species_glm <- glm(FINALWEIGHT ~ FINALVALUE, data = species_clean, family = Gamma(link = "log"))
+summary(species_glm)
+#okay this model is signifciant 
+```
+
+```{r}
+# Calculate residuals
+species_clean$residuals <- residuals(species_glm, type = "deviance")
+
+# Plot residuals
+ggplot(species_clean, aes(x = FINALVALUE, y = residuals)) +
+  geom_point(alpha = 0.5) +  # Scatter plot of residuals
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  # Horizontal line at 0
+  labs(title = "Residuals vs FINALVALUE", x = "FINALVALUE", y = "Residuals") +
+  theme_minimal()
+
+#these residuals are not random... this model is not ideal?
+```
+
+
+```{r}
+# Generate predictions from the GLM
+species_clean$predicted_values <- predict(species_glm, type = "response")
+
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT, color = FISH)) +
+  geom_point(alpha = 0.5) +  # Scatter plot of actual data
+  geom_line(aes(y = predicted_values), color = "blue", size = 1) +  # Predicted values from GLM
+  labs(title = "Predicted vs Actual FINALWEIGHT",
+       x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+#yeah, this model fit looks rough, way over predicts at higher ends like 
+#residuals shows us
+```
+
+```{r}
+# Fit a GAM model
+species_gam <- gam(FINALWEIGHT ~ s(FINALVALUE), data = species_clean)
+
+# Check the summary of the model
+summary(species_gam)
+
+```
+
+```{r}
+# Generate predictions from the GAM model
+species_clean$gam_predicted_values <- predict(species_gam, type = "response")
+
+# Plot actual vs predicted using GAM
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
+  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_line(aes(x = FINALVALUE, y = gam_predicted_values), color = "blue", size = 1) +  # GAM predicted values
+  labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal()
+#this model fit actually looks pretty good
+```
+
+```{r}
+# Compare AIC values
+AIC(species_glm, species_gam)
+# okay at this point we are probably overfitting the model ad this is a 
+#result of uneccesary model completixty
+```
+
+```{r}
+# Calculate residuals
+species_clean$residuals <- residuals(species_gam, type = "deviance")
+
+# Plot residuals
+ggplot(species_clean, aes(x = gam_predicted_values, y = residuals)) +
+  geom_point(alpha = 0.5) +  # Scatter plot of residuals
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  # Horizontal line at 0
+  labs(title = "Residuals vs Predicted Values", x = "Predicted Values", y = "Residuals") +
+  theme_minimal()
+
+#wwell, these are random! that is good
+```
 
 **MLR ratio across all years**
 ```{r SPECIES data multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
