@@ -64,23 +64,23 @@ names and '_ENV872_Project'.
 
 Raw data files (named by year, same information for all years):
 Columns:
--'Fish' - species common name (chr)
--'Final Weight' - Weight of landings in pounds (lbs) - (int)
--'Final Value' - Value in US Dollars of landings (int)
+- 'Fish' - species common name (chr)
+- 'Final Weight' - Weight of landings in pounds (lbs) - (int)
+- 'Final Value' - Value in US Dollars of landings (int)
 
 Raw county data file: 'stats_fishies.csv'
 Columns:
--'County' - North Carolina county (chr)
--'Year' - Year the data represents (Date)
--'Pounds' - Weight of landings in pounds (lbs) - (int)
--'Value' - Value in US Dollars of landings - (int)
+- 'County' - North Carolina county (chr)
+- 'Year' - Year the data represents (Date)
+- 'Pounds' - Weight of landings in pounds (lbs) - (int)
+- 'Value' - Value in US Dollars of landings - (int)
 
 ## Scripts and code
 
-'SchirmacherAyden_FinalProject.Rmd' - inital exploration and analysis of data
-'SchirmacherAyden_Counties_FinalProject.Rmd' - mapping of county data
-'GroupDocument_FinalProject.Rmd' - combined script of analyses by all investigators
-'Holsclaw_Kagiliery_Newton_Schirmacher_ENV872_Project.Rmd' - markdown file of
+- 'SchirmacherAyden_FinalProject.Rmd' - inital exploration and analysis of data
+- 'SchirmacherAyden_Counties_FinalProject.Rmd' - mapping of county data
+- 'GroupDocument_FinalProject.Rmd' - combined script of analyses by all investigators
+- 'Holsclaw_Kagiliery_Newton_Schirmacher_ENV872_Project.Rmd' - markdown file of
 final analyses and interpretations included in final report. 
 
 
