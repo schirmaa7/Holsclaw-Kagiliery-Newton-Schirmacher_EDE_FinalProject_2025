@@ -555,7 +555,7 @@ AIC(species_glm, species_gam, species_gam2)
 ```
 
 ```{r}
-species_glm2 <- glm(FINALWEIGHT ~ FINALVALUE + species_group, data = species_clean)
+species_glm2 <- glm(FINALWEIGHT ~ FINALVALUE * species_group, data = species_clean)
 summary(species_glm2)
 
 # Predict the values using the fitted GAM model
