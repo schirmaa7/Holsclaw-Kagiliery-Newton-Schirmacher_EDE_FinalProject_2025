@@ -14,10 +14,10 @@ fisheries management and understanding local demands of the seafood industry.
 
 ## Investigators
 
-Natalie Holsclaw, MEM Candidate, natalie.holsclaw@duke.edu
-Julia Kagiliery, MEM Candidate, julia.kagiliery@duke.edu
-Tori Newton, MEM Candidate, tori.newton@duke.edu
-Ayden Schirmacher, MEM Candidate, ayden.schirmacher@duke.edu
+- Natalie Holsclaw, MEM Candidate, natalie.holsclaw@duke.edu
+- Julia Kagiliery, MEM Candidate, julia.kagiliery@duke.edu
+- Tori Newton, MEM Candidate, tori.newton@duke.edu
+- Ayden Schirmacher, MEM Candidate, ayden.schirmacher@duke.edu
 
 
 ## Keywords
@@ -63,17 +63,17 @@ names and '_ENV872_Project'.
 ## Metadata
 
 Raw data files (named by year, same information for all years):
-Columns:
-- 'Fish' - species common name (chr)
-- 'Final Weight' - Weight of landings in pounds (lbs) - (int)
-- 'Final Value' - Value in US Dollars of landings (int)
+- Columns:
+  - 'Fish' - species common name (chr)
+  - 'Final Weight' - Weight of landings in pounds (lbs) - (int)
+  - 'Final Value' - Value in US Dollars of landings (int)
 
 Raw county data file: 'stats_fishies.csv'
-Columns:
-- 'County' - North Carolina county (chr)
-- 'Year' - Year the data represents (Date)
-- 'Pounds' - Weight of landings in pounds (lbs) - (int)
-- 'Value' - Value in US Dollars of landings - (int)
+- Columns:
+  - 'County' - North Carolina county (chr)
+  - 'Year' - Year the data represents (Date)
+  - 'Pounds' - Weight of landings in pounds (lbs) - (int)
+  - 'Value' - Value in US Dollars of landings - (int)
 
 ## Scripts and code
 
