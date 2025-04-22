@@ -532,6 +532,50 @@ ggplot(species_clean, aes(x = gam_predicted_values, y = residuals)) +
 #wwell, these are random! that is good
 ```
 
+```{r}
+# Fit a GAM with a categorical variable (species) 
+species_gam2 <- gam(FINALWEIGHT ~ s(FINALVALUE) + species_group, data = species_clean)
+
+# Check the summary of the model
+summary(species_gam2)
+
+# Predict the values using the fitted GAM model
+species_clean$gam_predicted_values <- predict(species_gam2, type = "response")
+
+# Plot the actual vs predicted values
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
+  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_line(aes(x = FINALVALUE, y = gam_predicted_values), color = "blue", size = 1) +  # GAM predicted values
+  labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal()
+```
+
+```{r}
+AIC(species_glm, species_gam, species_gam2)
+```
+
+```{r}
+species_glm2 <- glm(FINALWEIGHT ~ FINALVALUE + species_group, data = species_clean)
+summary(species_glm2)
+
+# Predict the values using the fitted GAM model
+species_clean$glm2_predicted_values <- predict(species_glm2, type = "response")
+
+# Plot the actual vs predicted values
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
+  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_line(aes(x = FINALVALUE, y = glm2_predicted_values), color = "blue", size = 1) +  # GAM predicted values
+  labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal()
+```
+
+```{r}
+AIC(species_glm, species_gam, species_gam2, species_glm2)
+#we are just overfitting now
+```
+
+
+
 **MLR ratio across all years**
 ```{r SPECIES data multiple linear regression model, message=FALSE, warning=FALSE, echo=FALSE}
 #log transform the variables to meet normality assumptions
