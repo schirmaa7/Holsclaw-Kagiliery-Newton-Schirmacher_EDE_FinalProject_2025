@@ -11,7 +11,6 @@ output:
 knitr::opts_chunk$set(dev = "png")
 ```
 
-
 \newpage
 \tableofcontents 
 \newpage
@@ -22,24 +21,25 @@ knitr::opts_chunk$set(dev = "png")
 
 # Rationale and Research Questions
 
-## Main Research Question: Is there a difference in the value-to-weight ratio from commercial landings in North Carolina between 2014-2022?
+### Main Research Question: Is there a difference in the value-to-weight ratio from commercial landings in North Carolina between 2014-2022?
 
-## Sub-question A: Is there a difference in the value-to-weight ratio from commercial landings by SPECIES in North Carolina between 2014-2022?
+### Sub-question A: Is there a difference in the value-to-weight ratio from commercial landings by SPECIES in North Carolina between 2014-2022?
 
-## Sub-question B: Is there a difference in the value-to-weight ratio from commercial landings by COUNTY in North Carolina between 2014-2022?
+### Sub-question B: Is there a difference in the value-to-weight ratio from commercial landings by COUNTY in North Carolina between 2014-2022?
 
-### This project examines commercial fishing in North Carolina, focusing on the value-to-weight ratio of various species. The value-to-weight ratio is calculated by dividing the weight of the species landed by its monetary value. Commercial fisheries play a vital role in the economy and culture of North Carolina’s coastal communities. Understanding the efficiency of fisheries through metrics like the value-to-weight ratio provides insights into shifting market dynamics, species profitability, and resources sustainability. Between 2014 and 2022, various factors such as regulatory changes, climate variability, species migration, and market demand may have influenced commercial landings. Examining how value-to-weight ratios vary across species groups, time, and counties can reveal patterns in fishing practices and economic resilience. This can be used to help inform better fisheries management and regional planning. 
+This project examines commercial fishing in North Carolina, focusing on the value-to-weight ratio of various species. The value-to-weight ratio is calculated by dividing the weight of the species landed by its monetary value. Commercial fisheries play a vital role in the economy and culture of North Carolina’s coastal communities. Understanding the efficiency of fisheries through metrics like the value-to-weight ratio provides insights into shifting market dynamics, species profitability, and resources sustainability. Between 2014 and 2022, various factors such as regulatory changes, climate variability, species migration, and market demand may have influenced commercial landings. Examining how value-to-weight ratios vary across species groups, time, and counties can reveal patterns in fishing practices and economic resilience. This can be used to help inform better fisheries management and regional planning.
 
-### The dataset selected includes detailed records of commercial landings reported by species, county, and year across North Carolina from 2014 to 2022. This geographic and temporal scope allows for the exploration of both short-term fluctuations and longer-term trends. Having counties as the spatial unit captures regional differences and grouping by species helps in detecting differences between high-value species and lower-value, bulk-harvested species. By using value and weight as core variables, the study quantifies economic return per unit of harvest, providing insight into the changing efficiency and profitability of North Carolina’s commercial fishing industry. 
+The dataset selected includes detailed records of commercial landings reported by species, county, and year across North Carolina from 2014 to 2022. This geographic and temporal scope allows for the exploration of both short-term fluctuations and longer-term trends. Having counties as the spatial unit captures regional differences and grouping by species helps in detecting differences between high-value species and lower-value, bulk-harvested species. By using value and weight as core variables, the study quantifies economic return per unit of harvest, providing insight into the changing efficiency and profitability of North Carolina’s commercial fishing industry.
 
+![Shrimping vessel in North Carolina](%22C:\Users\natal\OneDrive\Documents\Duke-Nat_top\Spring%202025\Data%20Exploration\Holsclaw-Kagiliery-Newton-Schirmacher_EDE_FinalProject_2025\better%20shrimp%20boat.jpg%22)
 
 \newpage
 
 # Dataset Information
 
-### The data used in this report come from commercial landings data collected by the North Carolina Department of Environmental Quality (NCDEQ). The North Carolina Division of Marine Fisheries collects data from commercial fishers via a 'Trip Ticket Program' where fishermen are required to report information related to their catch (1). Purchasers of seafood from commercial fishermen are required to collect this data in a form and submit it the N.C. Division of Marine Fisheries on a monthly basis. The goal of the program is to obtain accurate reportings of commercial fishing so that fisheries managers can manage marine resources in a sustainable way. Data on commercial landings by county is also provided by the NCDEQ in their License and Statistic annual report and is used in this study as well.
+The data used in this report come from commercial landings data collected by the North Carolina Department of Environmental Quality (NCDEQ). The North Carolina Division of Marine Fisheries collects data from commercial fishers via a 'Trip Ticket Program' where fishermen are required to report information related to their catch (1). Purchasers of seafood from commercial fishermen are required to collect this data in a form and submit it the N.C. Division of Marine Fisheries on a monthly basis. The goal of the program is to obtain accurate reportings of commercial fishing so that fisheries managers can manage marine resources in a sustainable way. Data on commercial landings by county is also provided by the NCDEQ in their License and Statistic annual report and is used in this study as well.
 
-### The fisheries data from the NCDEQ dates back to 1972 and can be exported in .csv files by year with information on the species common name, weight, and landings value. For the purposes of this study, we utilized commercial landings data from 2014 to 2022. Because each year was downloaded as an individual .csv file, our first step in data wrangling was binding the data together. The data was cleaned to ensure it was in the proper format for analyses including corrections to the date format and removal of non-numeric characters from the landings value data. The data were filtered to only include species that had data across all years in the time period of this study. To compare larger groups of species, species were combined into sub-groups - i.e. crustaceans, mollusks, sharks and rays, etc. To get an idea of the true value of species groups, the value-to-weight ratio was calculated for each.
+The fisheries data from the NCDEQ dates back to 1972 and can be exported in .csv files by year with information on the species common name, weight, and landings value. For the purposes of this study, we utilized commercial landings data from 2014 to 2022. Because each year was downloaded as an individual .csv file, our first step in data wrangling was binding the data together. The data was cleaned to ensure it was in the proper format for analyses including corrections to the date format and removal of non-numeric characters from the landings value data. The data were filtered to only include species that had data across all years in the time period of this study. To compare larger groups of species, species were combined into sub-groups - i.e. crustaceans, mollusks, sharks and rays, etc. To get an idea of the true value of species groups, the value-to-weight ratio was calculated for each.
 
 ```{r setup, include=FALSE}
 # Set your working directory
@@ -76,7 +76,6 @@ library(mapview)
 library(knitr)
 ```
 
-
 ```{r, echo = FALSE, fig.keep='none'}
 
 data_summary <- data.frame(
@@ -91,7 +90,6 @@ data_summary <- data.frame(
 kable(data_summary, caption = "Summary of Key Variables in Dataset")
 
 ```
-
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
 
