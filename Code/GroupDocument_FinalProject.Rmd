@@ -179,7 +179,7 @@ species_diff<-
   mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
 
 species_clean <- left_join(species_clean, species_diff %>% 
-                        select(FISH, diff_means), by = "FISH")
+                        dplyr::select(FISH, diff_means), by = "FISH")
 
 ```
 
@@ -197,7 +197,7 @@ county_diff<-
   mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
 
 county_clean <- left_join(county_clean, county_diff 
-                      %>% select(County, diff_means), by = "County")
+                      %>% dplyr::select(County, diff_means), by = "County")
 
 ```
 
@@ -304,13 +304,13 @@ ggplot(nc_county)+
 
 *FIGURE 6. Catch Data County Spatial Plots Categorized by Value*
 ```{r COUNTY data spatial value plot, message=FALSE, warning=FALSE, echo=FALSE}
-#ggplot(nc_county)+
-#  geom_sf(aes(fill = Value))+
-#    labs(
-#    title= "Value of Commercial Seafood Landings by County
-#    of Landing in North Carolina, 2014-2023")+
-#  theme_bw()+
-#  facet_wrap(~Year)
+ggplot(nc_county)+
+  geom_sf(aes(fill = Value))+
+    labs(
+    title= "Value of Commercial Seafood Landings by County
+    of Landing in North Carolina, 2014-2023")+
+  theme_bw()+
+  facet_wrap(~Year)
 ```
 
 *FIGURE 7. Catch Data County Spatial Plots Categorized by Weight*
@@ -343,6 +343,21 @@ print(SummaryStats)
 ```
 
 ```{r}
+# Test log transformed value-to-weight ratio for normality 
+species_clean$ratio_log <- log(species_clean$value_weight_ratio)
+ggplot(species_clean, aes(x = ratio_log))+
+  geom_histogram()
+shapiro.test(species_clean$ratio_log)
+qqnorm(species_clean$ratio_log)
+qqline(species_clean$ratio_log, col = "red")
+
+# Test county data for normality 
+ggplot(county_clean, aes(x = value_weight_ratio))+
+  geom_histogram()
+shapiro.test(county_clean$value_weight_ratio)
+qqnorm(county_clean$value_weight_ratio)
+qqline(county_clean$value_weight_ratio, col = "red")
+
 # Apply the Shapiro-Wilk test on FINALWEIGHT to see if it is normal
 #if p is less than 0.05, Not normal
 shapiro_test_resultWeight <- shapiro.test(fish_all$FINALWEIGHT)
