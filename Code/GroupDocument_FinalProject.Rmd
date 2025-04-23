@@ -332,14 +332,15 @@ ggplot(nc_county)+
 ```{r}
 #here are summary stats by fish 
 SummaryStatsFish <- fish_all |>
-  mutate(AverageValueWeightRatio = FINALVALUE / FINALWEIGHT) |>  # First calculate the ratio for each row
+  mutate(ValueWeightRatio = FINALVALUE / FINALWEIGHT) |>  # First calculate the ratio for each row
   group_by(FISH) |>
   summarize(
     AverageWeight = mean(FINALWEIGHT, na.rm = TRUE),
     SDWeight = sd(FINALWEIGHT, na.rm = TRUE),
     AverageValue = mean(FINALVALUE, na.rm = TRUE),
     SDValue = sd(FINALVALUE, na.rm = TRUE),
-    AverageValueWeightRatio = mean(AverageValueWeightRatio, na.rm = TRUE),  # Calculate the mean of the ratio
+    AverageValueWeightRatio = mean(ValueWeightRatio, na.rm = TRUE), 
+    SDRatio = sd(ValueWeightRatio, na.rm = TRUE),# Calculate the mean of the ratio
     .groups = "drop"  # This removes the grouping structure after summarization
   )
 
@@ -347,7 +348,6 @@ print(SummaryStatsFish)
 ```
 
 ```{r}
-
 SummaryStatsSpecies <- species_clean |>
   group_by(species_group) |>
   summarize(
@@ -412,44 +412,7 @@ print(species_wilcox_results)
 #we use this test bc we don't assume normality
 ```
 
-```{r}
-# Log transform the weighta and value column (they are all positive)
-fish_all$log_FINALWEIGHT <- log(fish_all$FINALWEIGHT)
-fish_all$log_FINALVALUE <- log(fish_all$FINALVALUE)
-
-shapiro_test_logWeight <- shapiro.test(fish_all$log_FINALWEIGHT)
-shapiro_test_logValue <- shapiro.test(fish_all$log_FINALVALUE)
-
-# Print the results
-print(shapiro_test_logWeight)
-print(shapiro_test_logValue)
-
-#logs do not normalize data
-```
-
-```{r}
-fish_all$inv_FINALWEIGHT <- 1 / fish_all$FINALWEIGHT
-shapiro_test_invWEIGHT <- shapiro.test(fish_all$inv_FINALWEIGHT)
-print(shapiro_test_invWEIGHT)
-
-fish_all$inv_FINALVALUE <- 1 / fish_all$FINALVALUE
-shapiro_test_invVALUE <- shapiro.test(fish_all$inv_FINALVALUE)
-print(shapiro_test_invVALUE)
-
-#inverses do not normalize data
-```
-
-```{r}
-# Apply Box-Cox transformation to see if this will force data to be normal
-boxcox_result <- boxcox(FINALWEIGHT ~ 1, data = fish_all, lambda = seq(-2, 2, by = 0.1))
-best_lambda <- boxcox_result$x[which.max(boxcox_result$y)]
-fish_all$boxcox_FINALWEIGHT <- (fish_all$FINALWEIGHT^best_lambda - 1) / best_lambda
-
-# Shapiro-Wilk test on Box-Cox transformed data
-shapiro_test_boxcox <- shapiro.test(fish_all$boxcox_FINALWEIGHT)
-print(shapiro_test_boxcox)
-#nope, I am out of tricks cannot force this data to be normal
-```
+dfe3
 
 
 ```{r}
@@ -606,6 +569,34 @@ ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
 AIC(species_glm, species_gam, species_gam2, species_glm2)
 #we are just overfitting now, the GLM model is the best option still
 ```
+
+```{r}
+kruskal_test <- kruskal.test(value_weight_ratio ~ species_group, data = species_clean)
+print(kruskal_test)
+# there are differences between at least one group and the median ratio value 
+```
+
+```{r}
+pairwise.wilcox.test(
+  x = species_clean$value_weight_ratio,
+  g = species_clean$species_group,
+  p.adjust.method = "BH"  # Benjamini-Hochberg, or use "bonferroni" or "holm"
+)
+
+```
+
+```{r}
+ggplot(species_clean, aes(x = species_group, y = value_weight_ratio)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7, outlier.color = "red") +
+  labs(
+    title = "Value-to-Weight Ratio by Species Group",
+    x = "Species Group",
+    y = "Value-to-Weight Ratio"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 
 
 

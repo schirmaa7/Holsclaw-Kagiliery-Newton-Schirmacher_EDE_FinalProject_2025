@@ -39,27 +39,12 @@ The dataset selected includes detailed records of commercial landings reported b
 
 The data used in this report come from commercial landings data collected by the North Carolina Department of Environmental Quality (NCDEQ). The North Carolina Division of Marine Fisheries collects data from commercial fishers via a 'Trip Ticket Program' where fishermen are required to report information related to their catch (1). Purchasers of seafood from commercial fishermen are required to collect this data in a form and submit it the N.C. Division of Marine Fisheries on a monthly basis. The goal of the program is to obtain accurate reportings of commercial fishing so that fisheries managers can manage marine resources in a sustainable way. Data on commercial landings by county is also provided by the NCDEQ in their License and Statistic annual report and is used in this study as well.
 
-The fisheries data from the NCDEQ dates back to 1972 and can be exported in .csv files by year with information on the species common name, weight, and landings value. For the purposes of this study, we utilized commercial landings data from 2014 to 2022. Because each year was downloaded as an individual .csv file, our first step in data wrangling was binding the data together. The data was cleaned to ensure it was in the proper format for analyses including corrections to the date format and removal of non-numeric characters from the landings value data. The data were filtered to only include species that had data across all years in the time period of this study. To compare larger groups of species, species were combined into sub-groups - i.e. crustaceans, mollusks, sharks and rays, etc. To get an idea of the true value of species groups, the value-to-weight ratio was calculated for each.
+The fisheries data from the NCDEQ dates back to 1972 and can be exported in .csv files by year with information on the species common name, weight, and landings value. For the purposes of this study, we utilized commercial landings data from 2014 to 2022. Because each year was downloaded as an individual .csv file, our first step in data wrangling was binding the data together. The data was cleaned to ensure it was in the proper format for analyses including corrections to the date format and removal of non-numeric characters  from the landings value data. The data were filtered to only include species that had data across all years in the time period of this study. To compare larger groups of species, species were combined into sub-groups - i.e. crustaceans, mollusks, sharks and rays, etc. To get an idea of the true value of species groups, the value-to-weight ratio was calculated for each.
 
 ```{r setup, include=FALSE}
 # Set your working directory
 getwd()
 
-# Load neccesary packages
-#install.packages("dplyr")
-#install.packages("tidyverse")
-#install.packages("ggplot2")
-#install.packages("lubridate")
-#install.packages("ggrepel")
-#install.packages("here")
-#install.packages("gifski")
-#install.packages("gganimate")
-#install.packages("gapminder")
-#install.packages("scales")
-#install.packages("sf")
-#install.packages("leaflet")
-#install.packages("mapview")
-#install.packages("knitr")
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -92,9 +77,6 @@ kable(data_summary, caption = "Summary of Key Variables in Dataset")
 ```
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
-
-
-
 #catch and species information
 fish_2022<-read.csv(here("Data", "Raw", "2022.csv"))
 fish_2021<-read.csv(here("Data", "Raw", "2021.csv"))
@@ -144,7 +126,7 @@ fish_all<-fish_all%>%
 
 #Keeping only the fish observations that are present across all years
 species_clean<-fish_all %>%
-  dpylr::select(Year, FISH, FINALWEIGHT, FINALVALUE)%>%
+  dplyr::select(Year, FISH, FINALWEIGHT, FINALVALUE)%>%
   group_by(FISH) %>%
   filter(n_distinct(Year) == length(unique(fish_all$Year))) %>%
   #^^keep only the observations across all years
@@ -240,7 +222,7 @@ species_diff<-
   mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
 
 species_clean <- left_join(species_clean, species_diff %>% 
-                        select(FISH, diff_means), by = "FISH")
+                        dplyr::select(FISH, diff_means), by = "FISH")
 
 ```
 
@@ -258,7 +240,7 @@ county_diff<-
   mutate(diff_means = value_weight_ratio_2022 - value_weight_ratio_2014)
 
 county_clean <- left_join(county_clean, county_diff 
-                      %>% select(County, diff_means), by = "County")
+                      %>% dplyr::select(County, diff_means), by = "County")
 
 ```
 
@@ -268,7 +250,7 @@ county_clean <- left_join(county_clean, county_diff
 
 *Analysis By Species Group*
 
-An analysis of the average value-to-weight ratio by species over the study period shows that some of the species groups have little to no variation, while others are much more scattered (Figure 1.) For example, the value-to-weight ratio for Crustaceans experiences a change of\~5 between 2021 and 2022 and Eels experienced a change of \~3.5 between 2017 and 2019. However, the ratio for Sharks and Rays has stayed constant just above zero, while many other species groups have had small but steady positive increases (small positive slopes).
+An analysis of the average value-to-weight ratio by species over the study period shows that some of the species groups have little to no variation, while others are much more scattered (Figure 1 and figure 2.) For example, the value-to-weight ratio for Crustaceans experiences a change of\~5 between 2021 and 2022 and Eels experienced a change of \~3.5 between 2017 and 2019. However, the ratio for Sharks and Rays has stayed constant just above zero, while many other species groups have had small but steady positive increases (small positive slopes).
 
 Another way of looking at the value-to-weight ratio is by plotting the ratio itself, without distinguishing the year of observation. The relationship of value-to-weight is shown in Figure 2. Due to the large right skew from the Crustaceans species group in this data, the actual relationships of the species groups are difficult to see. Therefore, a log transformation was applied in order to better distinguish the value-to-weight ratios of the different species groups (Figure 3.). From these two plots, it can be determined that Crustaceans tend to be an outlying species group; the lowest value-to-weight ratios typically correspond to mollusks; and that many of the other species have fairly similar ratios.
 
@@ -276,7 +258,19 @@ A final analysis of the value-to-weight ratio by species group is shown in a yea
 
 Overall, the exploratory plots for species groupings indicate that there is a high likelihood of the value-to-weight ratio of commercial landings in North Carolina being different between 2014 and 2022, and across species groups throughout that time period.
 
-```{r mean ratio across species groups, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 1. Average Weight-Value Ratio of Commercial Landings in North Carolina by Species Group, 2014-2022'}
+```{r mean ratio across species groups, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 1. Average Weight-Value Ratio of Commercial Landings in North Carolina by Species Group, Averaged Over Time'}
+ggplot(species_clean, aes(x = species_group, y = value_weight_ratio)) +
+  geom_boxplot(fill = "skyblue", alpha = 0.7, outlier.color = "red") +
+  labs(
+    title = "Value-to-Weight Ratio by Species Group",
+    x = "Species Group",
+    y = "Value-to-Weight Ratio"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r mean ratio across species groups, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 2. Average Weight-Value Ratio of Commercial Landings in North Carolina by Species Group, 2014-2022'}
 
 # Mean ratio ($) across species groups 
 summary_table <- species_clean %>%
@@ -348,6 +342,42 @@ species_animate<-
 animate(species_animate, fps = 30, duration = 15)
 ```
 
+Summary statistics grouped both by fish species and species type can be found below. 
+```{r}
+#here are summary stats by fish 
+SummaryStatsFish <- fish_all |>
+  mutate(ValueWeightRatio = FINALVALUE / FINALWEIGHT) |>  # First calculate the ratio for each row
+  group_by(FISH) |>
+  summarize(
+    AverageWeight = mean(FINALWEIGHT, na.rm = TRUE),
+    SDWeight = sd(FINALWEIGHT, na.rm = TRUE),
+    AverageValue = mean(FINALVALUE, na.rm = TRUE),
+    SDValue = sd(FINALVALUE, na.rm = TRUE),
+    AverageValueWeightRatio = mean(ValueWeightRatio, na.rm = TRUE), 
+    SDRatio = sd(ValueWeightRatio, na.rm = TRUE),# Calculate the mean of the ratio
+    .groups = "drop"  # This removes the grouping structure after summarization
+  )
+
+print(SummaryStatsFish)
+```
+
+```{r}
+SummaryStatsSpecies <- species_clean |>
+  group_by(species_group) |>
+  summarize(
+    AverageWeight = mean(FINALWEIGHT, na.rm = TRUE),
+    SDWeight = sd(FINALWEIGHT, na.rm = TRUE),
+    AverageValue = mean(FINALVALUE, na.rm = TRUE),
+    SDValue = sd(FINALVALUE, na.rm = TRUE),
+    AverageValueWeightRatio = mean(value_weight_ratio, na.rm = TRUE),
+    SDRatio = sd(value_weight_ratio, na.rm = TRUE),
+    .groups = "drop"  # This removes the grouping structure after summarization
+  )
+
+print(SummaryStatsSpecies)
+```
+
+
 *Analysis By County* The commercial landings data can also be classified by county. Figure 5 shows the value-to-weight ratio by county across all years in the study period; from this plot it can be determined that not only is there a difference between counties, but within each county, there was an overall increase in the value-to-weight ratio during the study period. Again, this indicates that there is an larger increase in the value of the landings than there is an increase in the weight of the landings.
 
 ```{r COUNTY shapefile and joining dataset, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 5. Value to Weight Ratio of Commercial Landings in North Carolina by County, 2014-2022'}
@@ -382,6 +412,24 @@ ggplot(nc_county)+
 
 *Addressing sub-question A*
 
+Initially, data is checked for normality. Weight and value data is not normal, even desipte logarithm transformations, inverse transformations, and a box cox transformation. Utalizing a pearson correlation coefficent, we note that there is a relationship between the weight and value of the comercial species.   
+
+```{r}
+# so we are still interested in if weight and value are related 
+species_correlation <- species_clean %>%
+  filter(species_group != "Eels") %>%
+  group_by(species_group) %>%
+  summarise(
+    pearson_correlation = cor(FINALWEIGHT, FINALVALUE, method = "pearson", use = "complete.obs"),
+    .groups = "drop"
+  )
+
+print(species_correlation)
+# yes those two things are related
+```
+
+
+
 Using a multiple linear regression model, it can be determined that there are some significant differences in the value-to-weight ratios across species, holding all else constant and assuming that the impacts of the explanatory variable on the annual value-to-weight ratio apply for the study time period of 2014-2022. The value-to-weight ratio of this model is log transformed in order to better satisfy the normality assumptions of mulitple linear regression.
 
 The regression model uses the Crustacean species group as the baseline, therefore we interpret all estimates (coefficients) and p-values in relationship to the Crustacean intercept. The species which are significantly different from the value-to-weight ratio of Crustaceans are: Drum and Croaker; Groupers and Sea Basses, Jacks and Pompanos, Mackerels and Tunas, Other, Other Finfish, Sharks and Rays, and Unclassified. All of these species groups have p-values less than 0.008, though only Grouper and Sea Basses have a positive relationship: an increase in the value-to-weight ratio of Crustaceans indicates and exp(0.485)≈1.625 or 62.5% increase in the Grouper and Sea Basses species group.
@@ -409,6 +457,134 @@ summary(species_multi_lm)
 plot(species_multi_lm)
 summary(species_multi_lm)
 ```
+
+The anova test assumes normality, so we augment it with a Kruskal test which confimrs that there are differences in the value-to-weight ratios accross species. 
+```{r}
+kruskal_test <- kruskal.test(value_weight_ratio ~ species_group, data = species_clean)
+print(kruskal_test)
+# there are differences between at least one group and the median ratio value 
+```
+
+```{r}
+pairwise.wilcox.test(
+  x = species_clean$value_weight_ratio,
+  g = species_clean$species_group,
+  p.adjust.method = "BH"  # Benjamini-Hochberg, or use "bonferroni" or "holm"
+)
+```
+
+Following the linear model, we also attempt two general linear models and two generalized additive models. We use a combinatio of using weight or weight and species to predict value. These models are free from normality assumptions that have caused previous issues. AIC model selection reveals that the first generalized linear model using weight as a predictor is the best model, likely because it is not as computationally difficult as other models and hence is not penalized as heavily for complexity in the AIC calculation. The GAM model does not preform as well in AIC, but seems much more accurate with an adjusted R squared value of 0.827, showing high accurancy. This is improved to 0.875 r squared value when speicies is included as a predictor. 
+
+**Here is a GLM Model**
+```{r}
+#generalized linear model does not need normality
+species_glm <- glm(FINALWEIGHT ~ FINALVALUE, data = species_clean, family = Gamma(link = "log"))
+summary(species_glm)
+#okay this model is significant 
+
+# Calculate residuals
+species_clean$residuals <- residuals(species_glm, type = "deviance")
+
+# Plot residuals
+ggplot(species_clean, aes(x = FINALVALUE, y = residuals)) +
+  geom_point(alpha = 0.5) +  # Scatter plot of residuals
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  # Horizontal line at 0
+  labs(title = "Residuals vs FINALVALUE", x = "FINALVALUE", y = "Residuals") +
+  theme_minimal() +
+  labs(title ="Residuals of the GLM Are Systematically Underpredicting Value at Higher Weight")
+
+#these residuals are not random... this model is not ideal? but GLM residuals don't need to be random for a valid model
+
+# Generate predictions from the GLM
+species_clean$predicted_values <- predict(species_glm, type = "response")
+
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT, color = FISH)) +
+  geom_point(alpha = 0.5) +  # Scatter plot of actual data
+  geom_line(aes(y = predicted_values), color = "blue", size = 1) +  # Predicted values from GLM
+  labs(title = "Predicted vs Actual FINALWEIGHT",
+       x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+#yeah, this model fit looks a bit rough,  over predicts at higher ends like 
+#residuals shows us
+```
+
+**Now Trying a GAM Model**
+```{r}
+# Fit a GAM model
+species_gam <- gam(FINALWEIGHT ~ s(FINALVALUE), data = species_clean)
+
+# Check the summary of the model
+summary(species_gam)
+
+# Generate predictions from the GAM model
+species_clean$gam_predicted_values <- predict(species_gam, type = "response")
+
+# Plot actual vs predicted using GAM
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
+  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_line(aes(x = FINALVALUE, y = gam_predicted_values), color = "blue", size = 1) +  # GAM predicted values
+  labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal()
+#this model fit actually looks pretty good
+
+# Calculate residuals
+species_clean$residuals <- residuals(species_gam, type = "deviance")
+
+# Plot residuals
+ggplot(species_clean, aes(x = gam_predicted_values, y = residuals)) +
+  geom_point(alpha = 0.5) +  # Scatter plot of residuals
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +  # Horizontal line at 0
+  labs(title = "GAM Residuals Appear Random", x = "Predicted Values", y = "Residuals") +
+  theme_minimal()
+
+#wwell, these are random! that is good
+```
+
+**Now Trying Another GAM Model**
+```{r}
+# Fit a GAM with a categorical variable (species) 
+species_gam2 <- gam(FINALWEIGHT ~ s(FINALVALUE) + species_group, data = species_clean)
+
+# Check the summary of the model
+summary(species_gam2)
+
+# Predict the values using the fitted GAM model
+species_clean$gam2_predicted_values <- predict(species_gam2, type = "response")
+
+# Plot the actual vs predicted values
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
+  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_line(aes(x = FINALVALUE, y = gam2_predicted_values), color = "blue", size = 1) +  # GAM predicted values
+  labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal()
+
+AIC(species_glm, species_gam, species_gam2)
+```
+
+**Now Trying Another GLM Model**
+```{r}
+species_glm2 <- glm(FINALWEIGHT ~ FINALVALUE * species_group, data = species_clean)
+summary(species_glm2)
+
+# Predict the values using the fitted GAM model
+species_clean$glm2_predicted_values <- predict(species_glm2, type = "response")
+
+# Plot the actual vs predicted values
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
+  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_line(aes(x = FINALVALUE, y = glm2_predicted_values), color = "blue", size = 1) +  # GAM predicted values
+  labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
+  theme_minimal()
+```
+
+```{r}
+AIC(species_glm, species_gam, species_gam2, species_glm2)
+#we are just overfitting now, the GLM model is the best option still
+```
+
+
 
 *Addressing Sub-question B* ***NOT SURE IF WE WANT TO HAVE A STATISTICAL DIFFERENCE TEST FOR COUNTY DATA***\*\*
 
