@@ -519,7 +519,7 @@ species_clean$predicted_values <- predict(species_glm, type = "response")
 
 ```{r GLM Model 1 prediction plot, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 9. GLM Model #1, showing the actual verus predicted plot. It looks like this model is overpredicting'}
 
-ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT,)) +
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
   geom_point(alpha = 0.5) +  # Scatter plot of actual data
   geom_line(aes(y = predicted_values), color = "blue", size = 1) +  # Predicted values from GLM
   labs(title = "Predicted vs Actual FINALWEIGHT",
