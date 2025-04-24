@@ -28,6 +28,8 @@ remove(list=ls())
 
 ### Sub-question B: Is there a difference in the value-to-weight ratio from commercial landings by COUNTY in North Carolina between 2014-2022?
 
+### Null hypothesis for all questions: there is no difference in the value-to-weight ratio.
+
 This project examines commercial fishing in North Carolina, focusing on the value-to-weight ratio of various species. The value-to-weight ratio is calculated by dividing the weight of the species landed by its monetary value. Commercial fisheries play a vital role in the economy and culture of North Carolina’s coastal communities. Understanding the efficiency of fisheries through metrics like the value-to-weight ratio provides insights into shifting market dynamics, species profitability, and resources sustainability. Between 2014 and 2022, various factors such as regulatory changes, climate variability, species migration, and market demand may have influenced commercial landings. Examining how value-to-weight ratios vary across species groups, time, and counties can reveal patterns in fishing practices and economic resilience. This can be used to help inform better fisheries management and regional planning.
 
 The dataset selected includes detailed records of commercial landings reported by species, county, and year across North Carolina from 2014 to 2022. This geographic and temporal scope allows for the exploration of both short-term fluctuations and longer-term trends. Having counties as the spatial unit captures regional differences and grouping by species helps in detecting differences between high-value species and lower-value, bulk-harvested species. By using value and weight as core variables, the study quantifies economic return per unit of harvest, providing insight into the changing efficiency and profitability of North Carolina’s commercial fishing industry.
@@ -45,6 +47,8 @@ The fisheries data from the NCDEQ dates back to 1972 and can be exported in .csv
 ```{r setup, include=FALSE}
 # Set your working directory
 getwd()
+
+# Load necessary packages
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -79,7 +83,6 @@ kable(data_summary, caption = "Summary of Key Variables in Dataset")
 
 ```{r data import, message=FALSE, warning=FALSE, include=FALSE}
 #catch and species information
-getwd()
 dataset_2022<-read.csv(here("Data", "Raw", "2022.csv"))
 dataset_2021<-read.csv(here("Data", "Raw", "2021.csv"))
 dataset_2020<-read.csv(here("Data", "Raw", "2020.csv"))
@@ -256,7 +259,7 @@ An analysis of the average value-to-weight ratio by species over the study perio
 
 Another way of looking at the value-to-weight ratio is by plotting the ratio itself, without distinguishing the year of observation. The relationship of value-to-weight is shown in Figure 3. Due to the large right skew from the Crustaceans species group in this data, the actual relationships of the species groups are difficult to see. Therefore, a log transformation was applied in order to better distinguish the value-to-weight ratios of the different species groups (Figure 4.). From these two plots, it can be determined that Crustaceans tend to be an outlying species group; the lowest value-to-weight ratios typically correspond to mollusks; and that many of the other species have fairly similar ratios.
 
-A final analysis of the value-to-weight ratio by species group is shown in a year-by-year plot of the weight-to-value ratio (Figure 5). This shows the same information as Figures 3. and 4., but now differentiates by year. The x axis (weight) is log transformed in order to better visualize the differences between species groups -- otherwise, most of the data is too small compared to crustaceans to be useful. Outlying values are labeled for every year. This plot confirms the outlying crustaceans, but also shows which years have certain species groups experiencing a ratio increase. An increasing ratio indicates that the value of the species landings has increased faster than the weight of the landings (where value-to-weight ratio is calculated by Value/Weight).
+A final analysis of the value-to-weight ratio by species group is shown in a year-by-year plot of the weight-to-value ratio (Figure 5). This shows the same information as Figures 3 and 4, but now differentiates by year. The x axis (weight) is log transformed in order to better visualize the differences between species groups -- otherwise, the range of data is too small compared to crustaceans to be useful. Outlying values are labeled for every year. This plot confirms the outlying crustaceans, but also shows which years have certain species groups experiencing a ratio increase. An increasing ratio indicates that the value of the species landings has increased faster than the weight of the landings (where value-to-weight ratio is calculated by Value/Weight).
 
 Overall, the exploratory plots for species groupings indicate that there is a high likelihood of the value-to-weight ratio of commercial landings in North Carolina being different between 2014 and 2022, and across species groups throughout that time period.
 
@@ -404,13 +407,6 @@ ggplot(nc_county)+
 
 ## Analysis
 
-# Main Research Question: Is there a difference in the value-to-weight ratio from commercial landings in North Carolina between 2014-2022?
-
-# Sub-question A: Is there a difference in the value-to-weight ratio from commercial landings by SPECIES in North Carolina between 2014-2022?
-
-# Sub-question B: Is there a difference in the value-to-weight ratio from commercial landings by COUNTY in North Carolina between 2014-2022?
-
-# Null hypothesis for all questions: there is no difference in the value-to-weight ratio.
 
 *Addressing sub-question A*
 
@@ -431,13 +427,13 @@ print(species_correlation)
 ```
 
 
-Using a multiple linear regression model, it can be determined that there are some significant differences in the value-to-weight ratios across species, holding all else constant and assuming that the impacts of the explanatory variable on the annual value-to-weight ratio apply for the study time period of 2014-2022. Although the value-to-weight ratio of this model is log transformed in an attempt to better satisfy the normality assumptions of mulitple linear regression, it is known that there are still issues with normality. However, this can still be used to show generally what kinds of relationships exist between the various species. 
+Using a multiple linear regression model, it can be determined that there are some significant differences in the value-to-weight ratios across species, holding all else constant and assuming that the impacts of the explanatory variable on the annual value-to-weight ratio apply for the study time period of 2014-2022. Although the value-to-weight ratio of this model is log transformed in an attempt to better satisfy the normality assumptions of multiple linear regression, it is known that there are still issues with normality. However, this can still be used to show generally what kinds of relationships exist between the various species. 
 
 The model uses the Crustacean species group as the baseline, therefore we interpret all estimates (coefficients) and p-values in relationship to the Crustacean intercept. The species which are significantly different from the value-to-weight ratio of Crustaceans are: Drum and Croaker; Groupers and Sea Basses, Jacks and Pompanos, Mackerels and Tunas, Other, Other Finfish, Sharks and Rays, and Unclassified. All of these species groups have p-values less than 0.008, though only Grouper and Sea Basses have a positive relationship: an increase in the value-to-weight ratio of Crustaceans indicates and exp(0.485)≈1.625 or 62.5% increase in the Grouper and Sea Basses species group.
 
 The year is also a significant contributor to the value-to-weight ratio, with a p-value of \~0.007.
 
-Given the R-squared value, the model explains \~33.44% of the variations in value-to-weight ratios. While this may seem low, the model is also statistically significant with a p-value less than 0.001. The assumptions of the model are not perfect and likely have issues with heteroscedasticity based on the Residuals plot. The residuals v. fitted plot shows values clumped together but relatively evenly distributed above and below the line.
+Given the R-squared value, the model explains \~33.44% of the variations in value-to-weight ratios. While this may seem low, the model is also statistically significant with a p-value less than 0.001. The assumptions of the model are not perfect and likely have issues with heteroscedasticity based on the Residuals plot. The residuals vs. fitted plot shows values clumped together but relatively evenly distributed above and below the line.
 
 Finally, the F-statistic of the model appears to be relatively small at 27.63 on 13 and 715 degrees of freedom, indicating that the differences in value-to-weight ratio between groups are not entirely by chance. Alternatively, the F-statistics of the ANOVA test is 29.320. Given that the multiple regression ANOVA F-value represents the the ratio of the between-group variance to the within-group variance, having an F-value of 29.320 against 12 degrees of freedom on a p-value \<0.001 suggests strong evidence to reject the null hypothesis that the value-to-weight ratio across species groups are the same. This is supported by the Tukey's test of ANOVA, which shows that there are several significant differences between species groups (Figure 7). 
 
@@ -466,7 +462,7 @@ summary(species_multi_lm)
 plot(species_tukey, las = 1, cex.axis = 0.6)
 ```
 
-  The biggest problem with the multiple linear regression and ANOVA tests is that they assume normality. One potential test to augment the faulty ANOVA test is a Kruskal test which confirms that there are differences in the value-to-weight ratios across species. This test showed that there is a strong evidence to reject the null hypothesis of no difference between species groups value-to-weight ratios over time, with a p-value <2.2e-16 and chi-squared value of 257.6. 
+  The biggest problem with the multiple linear regression and ANOVA tests is that they assume normality. One potential test to augment the ANOVA test is a Kruskal-Wallis test which confirms that there are differences in the value-to-weight ratios across species. This test showed that there is a strong evidence to reject the null hypothesis that there are no significant differences between species groups value-to-weight ratios over time, with a p-value <2.2e-16 and chi-squared value of 257.6. 
   
   We also ran a pairwise Wilcoxon rank-sum test, which is a non-parametric test, comparing the value_weight_ratio between each pair of species_groups. This also shows that there are differences across species, with the Sharks and Rays group consistently having the strongest p-values to suggest a difference. The rank-sum test shows that most group pairings are significantly different.
 
@@ -485,7 +481,7 @@ pairwise.wilcox.test(
 )
 ```
 
-  To augment the multiple linear regression model, two general linear models and two generalized additive models were attempted, using a combination of using weight or weight and species to predict value. These models are free from normality assumptions that have caused previous issues. AIC model selection reveals that the first generalized linear model using weight as a predictor is the best model, likely because it is not as computationally difficult as other models and hence is not penalized as heavily for complexity in the AIC calculation. The GAM model does not preform as well in AIC, but seems much more accurate with an adjusted R squared value of 0.827, showing high accuracy. This is improved to 0.875 R-squared value when species is included as a predictor. 
+  To augment the multiple linear regression model, two general linear models and two generalized additive models were attempted, using a combination of using weight or weight and species to predict value. These models are free from normality assumptions that have caused previous issues. AIC model selection reveals that the first generalized linear model using weight as a predictor is the best model, likely because it is not as computationally difficult as other models and hence is not penalized as heavily for complexity in the AIC calculation. The GAM model does not perform as well in AIC, but seems much more accurate with an adjusted R squared value of 0.827, showing high accuracy. This is improved to a 0.875 R-squared value when species is included as a predictor. 
 
 
 **GLM Model 1**
@@ -621,7 +617,16 @@ mean(county_year10$value_weight_ratio) - mean(county_year01$value_weight_ratio)
 \newpage
 
 # Summary and Conclusions
-  Based on the exhaustive analyses performed in this project, we conclude that there are significant differences in the value-to-weight ratio from commercial landings in North Carolina between 2014-2022. Furthermore, we conclude that -- despite the issues with the models -- there is a difference in this relationship between species groups and between counties. **SUGGESTIONS FOR NEXT STEPS + CONCLUSION**
+
+  Answering our primary research question, based on the exhaustive analyses performed in this project, we conclude that there are significant differences in the value-to-weight ratio from commercial landings in North Carolina between 2014-2022. Furthermore, we conclude that -- despite the issues with the models -- there is a difference in the relationship between species groups and between counties. We also found that there are significant differences in the value-to-weight ratio across years and species groups and these variables are significant predictors of the value-to-weight ratio. These conclusions are confirmed by our exploratory visual analysis of the data where crustaceans have a much higher overall value than other species groups. Differences in value-to-weight ratio among species groups is more subtle, though from our multiple linear model we can conclude that groupers & sea basses have a significantly higher value-to-weight ratio than crustaceans and many groups including drums & croakers, jacks & pompanos, mackerels & tuna, sharks & rays, etc. had significantly lower values. Though we did not explore differences by county in depth, Craven County, NC saw the highest value-to-weight ratio in 2022. 
+
+  
+  From this analysis we can gain more of an understanding about commercial fishing in coastal North Carolina. Crustaceans make up a large part of both the weight of commercial landings and the value they bring in. This may be attributed primarily to shrimp and blue crab fishing - which consistently had the highest value and weight across our study period of 2014 - 2022. Shrimp fishing is particularly damaging to the environment because they are caught by trawling which involves dragging fishing nets across the sea floor, damaging benthic habitats. For fisheries managers in North Carolina, this may mean balancing the economic value these species bring in with environmental impacts while ensuring they are harvested at sustainable levels.     
+  
+# Next Steps
+
+  Future studies could analyze commercial landings by county in more depth to see if there are differences in profits by species groups in each county and whether some counties may bring in more commercial landings than others. One major piece that is not addressed in depth by the scope of this study is the temporal aspect of commercial fishing. Looking at how much commercial landings have changed over time and specifically across species groups could give information about environmental changes in species availability and demands of the seafood industry. Comparison of catch with changes in fisheries management and policy could be a beneficial way to ascertain whether management plans are effective. Beyond the scope of this study, looking at the impacts of fishing gear like trawling on coastal North Carolina habitats could be interesting to see and may have important implications for fisheries management.  
+  
 
 \newpage
 
