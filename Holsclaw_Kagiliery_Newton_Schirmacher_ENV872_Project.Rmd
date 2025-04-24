@@ -260,7 +260,7 @@ A final analysis of the value-to-weight ratio by species group is shown in a yea
 
 Overall, the exploratory plots for species groupings indicate that there is a high likelihood of the value-to-weight ratio of commercial landings in North Carolina being different between 2014 and 2022, and across species groups throughout that time period.
 
-```{r mean ratio across species groups, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 1. Average Weight-Value Ratio of Commercial Landings in North Carolina by Species Group, Averaged Over Time'}
+```{r mean ratio across species groups boxplot, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 1. Average Weight-Value Ratio of Commercial Landings in North Carolina by Species Group, Averaged Over Time'}
 ggplot(species_clean, aes(x = species_group, y = value_weight_ratio)) +
   geom_boxplot(fill = "skyblue", alpha = 0.7, outlier.color = "red") +
   labs(
@@ -456,13 +456,13 @@ unique(species_anova)
 species_tukey <- TukeyHSD(species_anova, "species_group")
 ```
 
-```{r SPECIES data multiple linear regression model output, message=FALSE, warning=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Table 1. Multiple Linear Regression of Logged Value to Weight Ratio of Commercial Landings in North Carolina by Species, 2014-2022'}
+```{r SPECIES data multiple linear regression model output, message=FALSE, warning=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Model 1. Multiple Linear Regression of Logged Value to Weight Ratio of Commercial Landings in North Carolina by Species, 2014-2022'}
 summary(species_multi_lm)
 plot(species_multi_lm)
 summary(species_multi_lm)
 ```
 
-```{r graph Tukey's post hoc test, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 7. Tukey's Post-Hoc test of ANOVA test for significant difference in value-to-weight ratio between species groups'}
+```{r graph Tukeys post hoc test, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 7. Tukey\'s Post-Hoc test of ANOVA test for significant difference in value-to-weight ratio between species groups'}
 plot(species_tukey, las = 1, cex.axis = 0.6)
 ```
 
@@ -471,13 +471,13 @@ plot(species_tukey, las = 1, cex.axis = 0.6)
   We also ran a pairwise Wilcoxon rank-sum test, which is a non-parametric test, comparing the value_weight_ratio between each pair of species_groups. This also shows that there are differences across species, with the Sharks and Rays group consistently having the strongest p-values to suggest a difference. The rank-sum test shows that most group pairings are significantly different.
 
 
-```{r, warning=FALSE, message=FALSE, include=FALSE}
+```{r Kruskal, warning=FALSE, message=FALSE, include=FALSE}
 kruskal_test <- kruskal.test(value_weight_ratio ~ species_group, data = species_clean)
 print(kruskal_test)
 # there are differences between at least one group and the median ratio value 
 ```
 
-```{r, warning=FALSE, message=FALSE, include=FALSE}
+```{r Wilcox, warning=FALSE, message=FALSE, include=FALSE}
 pairwise.wilcox.test(
   x = species_clean$value_weight_ratio,
   g = species_clean$species_group,
@@ -489,7 +489,7 @@ pairwise.wilcox.test(
 
 
 **GLM Model 1**
-```{r GLM Model 1 code}
+```{r GLM Model 1 code, warning=FALSE, message=FALSE, echo=FALSE}
 #generalized linear model does not need normality
 species_glm <- glm(FINALWEIGHT ~ FINALVALUE, data = species_clean, family = Gamma(link = "log"))
 summary(species_glm)
@@ -512,14 +512,14 @@ ggplot(species_clean, aes(x = FINALVALUE, y = residuals)) +
 
 ```
 
-```{r GLM Model 1 prediction code, warning=FALSE, message=FALSE, include=FALSE}
+```{r GLM Model 1 prediction code, warning=FALSE, message=FALSE, echo=FALSE}
 # Generate predictions from the GLM
 species_clean$predicted_values <- predict(species_glm, type = "response")
 ```
 
 ```{r GLM Model 1 prediction plot, warning=FALSE, message=FALSE, echo=FALSE, fig.align='left', fig.height=4, fig.cap='Figure 9. GLM Model #1, showing the actual verus predicted plot. It looks like this model is overpredicting'}
 
-ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT, color = FISH)) +
+ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT,)) +
   geom_point(alpha = 0.5) +  # Scatter plot of actual data
   geom_line(aes(y = predicted_values), color = "blue", size = 1) +  # Predicted values from GLM
   labs(title = "Predicted vs Actual FINALWEIGHT",
@@ -544,7 +544,7 @@ species_clean$gam_predicted_values <- predict(species_gam, type = "response")
 
 # Plot actual vs predicted using GAM
 ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
-  geom_point(alpha = 0.5, color = "gray") +  # Scatter plot of actual data
+  geom_point(alpha = 0.5) +  # Scatter plot of actual data
   geom_line(aes(x = FINALVALUE, y = gam_predicted_values), color = "blue", size = 1) +  # GAM predicted values
   labs(title = "Predicted vs Actual FINALWEIGHT (GAM)", x = "FINALVALUE", y = "FINALWEIGHT") +
   theme_minimal()
@@ -564,7 +564,7 @@ ggplot(species_clean, aes(x = gam_predicted_values, y = residuals)) +
 ```
 
 **GAM Model 2**
-```{r GAM Model 2 code, warning=FALSE, message=FALSE, include=FALSE}
+```{r GAM Model 2 code, warning=FALSE, message=FALSE, echo=FALSE}
 # Fit a GAM with a categorical variable (species) 
 species_gam2 <- gam(FINALWEIGHT ~ s(FINALVALUE) + species_group, data = species_clean)
 
@@ -627,4 +627,4 @@ mean(county_year10$value_weight_ratio) - mean(county_year01$value_weight_ratio)
 
 # References
 
-### (1) Trip Ticket Program \| NC DEQ. (n.d.). Retrieved April 20, 2025, from <https://www.deq.nc.gov/about/divisions/marine-fisheries/science-and-statistics/trip-ticket-program>
+*(1) Trip Ticket Program \| NC DEQ. (n.d.). Retrieved April 20, 2025, from <https://www.deq.nc.gov/about/divisions/marine-fisheries/science-and-statistics/trip-ticket-program>*
