@@ -4,6 +4,7 @@ title: "Analysis of the Value-Weight Ratio of Commercial Landings in North Carol
 author: "Ayden Schirmacher, Natalie Holsclaw, Tori Newton, and Julia Kagiliery"
 output:
   html_document:
+    toc: true
     df_print: paged
 ---
 
@@ -405,10 +406,10 @@ ggplot(nc_county)+
 
 \newpage
 
-## Analysis
+# Analysis
 
 
-*Addressing sub-question A*
+##*Addressing sub-question A*
 
 Initially, data is checked for normality. Weight and value data is not normal, despite logarithm transformations, inverse transformations, and a box cox transformation. However, after utilizing a pearson correlation coefficient, we are able to note that there is a relationship between the weight and value of the commercial species. 
 
@@ -606,7 +607,7 @@ ggplot(species_clean, aes(x = FINALVALUE, y = FINALWEIGHT)) +
 ```
 
 
-*Addressing Sub-question B* 
+##*Addressing Sub-question B* 
   Based on the visual presented in Figure 6., we can see that there is a difference in commercial landings over time within and between counties in North Carolina. The changes in the map follow a general trend of increasing value-to-weight ratio, indicating an overall increase in the average value of the landings. This is supported by a brief calculation, showing that the difference in mean landing value-to-weight ratio over all counties increased by ~0.31 between 2014 and 2022. 
 
 ```{r, warning=FALSE, message=FALSE, include=FALSE}
